@@ -32,13 +32,17 @@ export const Canvas = ({
   const [draggedNode, setDraggedNode] = useState<{ nodeId: string; offset: { x: number; y: number } } | null>(null);
 
   const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
+    console.log('Canvas mouse down:', { target: e.target, currentTarget: e.currentTarget, activeTool });
+    
     if (e.target === canvasRef.current) {
       e.preventDefault();
+      console.log('Canvas direct click detected');
       if (e.button === 0) { // Left click
         if (activeTool !== 'select' && activeTool !== 'connect') {
           const rect = canvasRef.current!.getBoundingClientRect();
           const x = e.clientX - rect.left - panOffset.x;
           const y = e.clientY - rect.top - panOffset.y;
+          console.log('Calling onCanvasClick with:', { x, y });
           onCanvasClick(x, y);
         } else {
           onNodeSelect(null);

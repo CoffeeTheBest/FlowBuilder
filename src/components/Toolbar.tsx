@@ -29,7 +29,10 @@ export const Toolbar = ({ activeTool, onToolChange, onUndo, onRedo, canUndo, can
             key={tool.id}
             variant={activeTool === tool.id ? "default" : "ghost"}
             size="sm"
-            onClick={() => onToolChange(tool.id)}
+            onClick={() => {
+              console.log('Tool clicked:', tool.id);
+              onToolChange(tool.id);
+            }}
             className="h-8 w-8 p-0"
           >
             <tool.icon className="h-4 w-4" />

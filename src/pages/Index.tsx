@@ -47,8 +47,10 @@ const Index = () => {
   }, []);
 
   const handleCanvasClick = useCallback((x: number, y: number) => {
+    console.log('Canvas clicked:', { x, y, activeTool });
     if (activeTool !== 'select' && activeTool !== 'connect') {
       const newNode = createNode(activeTool, x - 50, y - 30);
+      console.log('Creating new node:', newNode);
       const newState = { ...state, nodes: [...state.nodes, newNode] };
       saveToHistory(newState);
       setActiveTool('select');
