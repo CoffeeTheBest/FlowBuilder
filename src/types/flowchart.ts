@@ -14,6 +14,7 @@ export interface Edge {
   id: string;
   fromNodeId: string;
   toNodeId: string;
+  label?: string;
 }
 
 export interface FlowchartState {

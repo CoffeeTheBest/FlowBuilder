@@ -66,6 +66,12 @@ export const FlowchartNode = ({
       <span className="px-2 text-center break-words">{node.text}</span>
     );
 
+    // Always call onClick on mouse up to ensure connect tool works
+    const handleMouseUp = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onClick();
+    };
+
     switch (node.type) {
       case 'rectangle':
         return (
@@ -73,26 +79,24 @@ export const FlowchartNode = ({
             className={`${baseClasses} ${selectedClasses} ${connectingClasses} rounded`}
             style={style}
             onMouseDown={onMouseDown}
-            onClick={onClick}
+            onMouseUp={handleMouseUp}
             onDoubleClick={handleDoubleClick}
           >
             {content}
           </div>
         );
-      
       case 'circle':
         return (
           <div
             className={`${baseClasses} ${selectedClasses} ${connectingClasses} rounded-full`}
             style={style}
             onMouseDown={onMouseDown}
-            onClick={onClick}
+            onMouseUp={handleMouseUp}
             onDoubleClick={handleDoubleClick}
           >
             {content}
           </div>
         );
-      
       case 'diamond':
         return (
           <div
@@ -104,7 +108,7 @@ export const FlowchartNode = ({
               top: 0
             }}
             onMouseDown={onMouseDown}
-            onClick={onClick}
+            onMouseUp={handleMouseUp}
             onDoubleClick={handleDoubleClick}
           >
             <div style={{ transform: 'rotate(-45deg)' }}>
@@ -112,20 +116,18 @@ export const FlowchartNode = ({
             </div>
           </div>
         );
-      
       case 'text':
         return (
           <div
             className={`${baseClasses} ${selectedClasses} ${connectingClasses} border-dashed bg-transparent`}
             style={style}
             onMouseDown={onMouseDown}
-            onClick={onClick}
+            onMouseUp={handleMouseUp}
             onDoubleClick={handleDoubleClick}
           >
             {content}
           </div>
         );
-      
       default:
         return null;
     }

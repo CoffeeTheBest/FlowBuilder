@@ -1,16 +1,23 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Node, Edge, Tool, FlowchartState } from '@/types/flowchart';
 import { Toolbar } from '@/components/Toolbar';
 import { Canvas } from '@/components/Canvas';
 import { StylePanel } from '@/components/StylePanel';
 
+
 const Index = () => {
+
+  // ...existing code...
   const [state, setState] = useState<FlowchartState>({ nodes: [], edges: [] });
   const [history, setHistory] = useState<FlowchartState[]>([{ nodes: [], edges: [] }]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [activeTool, setActiveTool] = useState<Tool>('select');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+
+
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
+
+
 
   const saveToHistory = useCallback((newState: FlowchartState) => {
     const newHistory = history.slice(0, historyIndex + 1);
@@ -47,10 +54,10 @@ const Index = () => {
   }, []);
 
   const handleCanvasClick = useCallback((x: number, y: number) => {
-    console.log('Canvas clicked:', { x, y, activeTool });
+    console.log('[DEBUG] Canvas clicked:', { x, y, activeTool });
     if (activeTool !== 'select' && activeTool !== 'connect') {
       const newNode = createNode(activeTool, x - 50, y - 30);
-      console.log('Creating new node:', newNode);
+      console.log('[DEBUG] Creating new node:', newNode);
       const newState = { ...state, nodes: [...state.nodes, newNode] };
       saveToHistory(newState);
       setActiveTool('select');
@@ -77,12 +84,16 @@ const Index = () => {
     }
   }, [activeTool, connectingFrom, state, saveToHistory]);
 
-  const handleNodeUpdate = useCallback((nodeId: string, updates: Partial<Node>) => {
+  const handleNodeUpdate = useCallback((nodeId: string, updates: Partial<Node>, pushToHistory: boolean = true) => {
     const newNodes = state.nodes.map(node => 
       node.id === nodeId ? { ...node, ...updates } : node
     );
     const newState = { ...state, nodes: newNodes };
-    saveToHistory(newState);
+    if (pushToHistory) {
+      saveToHistory(newState);
+    } else {
+      setState(newState);
+    }
   }, [state, saveToHistory]);
 
   const handleUndo = useCallback(() => {

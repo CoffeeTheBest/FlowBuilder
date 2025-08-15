@@ -30,10 +30,11 @@ export const Toolbar = ({ activeTool, onToolChange, onUndo, onRedo, canUndo, can
             variant={activeTool === tool.id ? "default" : "ghost"}
             size="sm"
             onClick={() => {
-              console.log('Tool clicked:', tool.id);
+              console.log('[DEBUG] Tool clicked:', tool.id);
               onToolChange(tool.id);
             }}
-            className="h-8 w-8 p-0"
+            className={`h-8 w-8 p-0${activeTool === tool.id ? ' ring-2 ring-blue-500' : ''}`}
+            aria-pressed={activeTool === tool.id}
           >
             <tool.icon className="h-4 w-4" />
           </Button>
