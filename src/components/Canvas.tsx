@@ -33,22 +33,26 @@ export const Canvas = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       // Prevent edge deletion if editing label
       if (editingLabelEdgeId) return;
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedEdgeId) {
+      // Escape unselects edge or node
+      if (e.key === 'Escape') {
         setSelectedEdgeId(null);
-        if (selectedEdgeId) {
-          // Remove edge from edges array
-          const newEdges = edges.filter(edge => edge.id !== selectedEdgeId);
-          // Remove label if present
-          // This assumes parent manages edge state, so you may need to lift this logic up
-          // For now, emit a custom event
-          const event = new CustomEvent('deleteEdge', { detail: { edgeId: selectedEdgeId, newEdges } });
-          window.dispatchEvent(event);
-        }
+        onNodeSelect(null);
+        return;
       }
+      // Delete/Backspace deletes selected edge only
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedEdgeId) {
+        // Remove edge from edges array
+        const newEdges = edges.filter(edge => edge.id !== selectedEdgeId);
+        const event = new CustomEvent('deleteEdge', { detail: { edgeId: selectedEdgeId, newEdges } });
+        window.dispatchEvent(event);
+        setSelectedEdgeId(null);
+        return;
+      }
+      // (No node deletion by keyboard)
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedEdgeId, edges, editingLabelEdgeId]);
+  }, [selectedEdgeId, edges, editingLabelEdgeId, onNodeSelect]);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
@@ -57,7 +61,6 @@ export const Canvas = ({
   const [hasDragged, setHasDragged] = useState(false);
 
   const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
-    console.log('Canvas mouse down:', { target: e.target, currentTarget: e.currentTarget, activeTool });
     
     // Allow shape adding if clicking on the canvas or the SVG overlay
     const isCanvasOrSvg =
@@ -234,7 +237,7 @@ export const Canvas = ({
     const label = getEdgeLabel(edge);
     // For label gap: shorten the line by 30px on each side if label exists or edge is selected
     let lineStart = start, lineEnd = end;
-  const showLabelBox = selectedEdgeId === edge.id || !!label;
+  const showLabelBox = !!label || selectedEdgeId === edge.id;
   const isEditingLabel = editingLabelEdgeId === edge.id;
     if (showLabelBox) {
       const dx = end.x - start.x, dy = end.y - start.y;
@@ -299,6 +302,31 @@ export const Canvas = ({
               }}
             >
               {label}
+              {/* Delete button for edge label */}
+              {selectedEdgeId === edge.id && !isEditingLabel && (
+                <button
+                  style={{
+                    position: 'absolute',
+                    right: -18,
+                    top: 0,
+                    width: 18,
+                    height: 18,
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#f43f5e',
+                    fontWeight: 'bold',
+                    fontSize: 16,
+                    cursor: 'pointer',
+                  }}
+                  title="Delete edge"
+                  onClick={e => {
+                    e.stopPropagation();
+                    const event = new CustomEvent('deleteEdge', { detail: { edgeId: edge.id } });
+                    window.dispatchEvent(event);
+                    setSelectedEdgeId(null);
+                  }}
+                >×</button>
+              )}
             </div>
           </foreignObject>
         )}

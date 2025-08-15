@@ -8,6 +8,23 @@ import { StylePanel } from '@/components/StylePanel';
 const Index = () => {
 
   // ...existing code...
+
+
+  // ...existing code...
+
+  // ...existing code...
+  // ...existing code...
+
+  // ...existing code...
+
+
+
+  // ...existing code...
+
+  // ...existing code...
+
+  // Place this useEffect after all state and function declarations, immediately before return
+  
   const [state, setState] = useState<FlowchartState>({ nodes: [], edges: [] });
   const [history, setHistory] = useState<FlowchartState[]>([{ nodes: [], edges: [] }]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -54,10 +71,8 @@ const Index = () => {
   }, []);
 
   const handleCanvasClick = useCallback((x: number, y: number) => {
-    console.log('[DEBUG] Canvas clicked:', { x, y, activeTool });
     if (activeTool !== 'select' && activeTool !== 'connect') {
       const newNode = createNode(activeTool, x - 50, y - 30);
-      console.log('[DEBUG] Creating new node:', newNode);
       const newState = { ...state, nodes: [...state.nodes, newNode] };
       saveToHistory(newState);
       setActiveTool('select');
@@ -115,6 +130,40 @@ const Index = () => {
   }, [historyIndex, history]);
 
   const selectedNode = selectedNodeId ? state.nodes.find(n => n.id === selectedNodeId) || null : null;
+useEffect(() => {
+    function handleDeleteNode(e: any) {
+      const nodeId = e.detail?.nodeId;
+      if (!nodeId) return;
+      // Remove node and any connected edges
+      const newNodes = state.nodes.filter(n => n.id !== nodeId);
+      const newEdges = state.edges.filter(e => e.fromNodeId !== nodeId && e.toNodeId !== nodeId);
+      const newState = { ...state, nodes: newNodes, edges: newEdges };
+      saveToHistory(newState);
+      setSelectedNodeId(null);
+    }
+    function handleDeleteEdge(e: any) {
+      const edgeId = e.detail?.edgeId;
+      if (!edgeId) return;
+      const newEdges = state.edges.filter(edge => edge.id !== edgeId);
+      const newState = { ...state, edges: newEdges };
+      saveToHistory(newState);
+    }
+    function handleEditEdgeLabel(e: any) {
+      const { edgeId, label } = e.detail || {};
+      if (!edgeId) return;
+      const newEdges = state.edges.map(edge => edge.id === edgeId ? { ...edge, label } : edge);
+      const newState = { ...state, edges: newEdges };
+      saveToHistory(newState);
+    }
+    window.addEventListener('deleteNode', handleDeleteNode);
+    window.addEventListener('deleteEdge', handleDeleteEdge);
+    window.addEventListener('editEdgeLabel', handleEditEdgeLabel);
+    return () => {
+      window.removeEventListener('deleteNode', handleDeleteNode);
+      window.removeEventListener('deleteEdge', handleDeleteEdge);
+      window.removeEventListener('editEdgeLabel', handleEditEdgeLabel);
+    };
+  }, [state, saveToHistory]);
 
   return (
     <div className="h-screen flex flex-col bg-background">

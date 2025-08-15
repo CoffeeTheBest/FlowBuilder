@@ -38,6 +38,7 @@ export const FlowchartNode = ({
   };
 
   const renderShape = () => {
+    const showDelete = isSelected;
     const baseClasses = `absolute border-2 flex items-center justify-center text-sm font-medium cursor-pointer transition-colors`;
     const selectedClasses = isSelected ? 'ring-2 ring-primary ring-offset-2' : '';
     const connectingClasses = isConnecting ? 'ring-2 ring-blue-500 ring-offset-2' : '';
@@ -83,6 +84,31 @@ export const FlowchartNode = ({
             onDoubleClick={handleDoubleClick}
           >
             {content}
+            {showDelete && (
+              <button
+                style={{
+                  position: 'absolute',
+                  top: 2,
+                  right: 2,
+                  width: 18,
+                  height: 18,
+                  background: 'white',
+                  border: '1px solid #f43f5e',
+                  color: '#f43f5e',
+                  fontWeight: 'bold',
+                  fontSize: 14,
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  zIndex: 20
+                }}
+                title="Delete node"
+                onClick={e => {
+                  e.stopPropagation();
+                  const event = new CustomEvent('deleteNode', { detail: { nodeId: node.id } });
+                  window.dispatchEvent(event);
+                }}
+              >×</button>
+            )}
           </div>
         );
       case 'circle':
@@ -95,6 +121,31 @@ export const FlowchartNode = ({
             onDoubleClick={handleDoubleClick}
           >
             {content}
+            {showDelete && (
+              <button
+                style={{
+                  position: 'absolute',
+                  top: 2,
+                  right: 2,
+                  width: 18,
+                  height: 18,
+                  background: 'white',
+                  border: '1px solid #f43f5e',
+                  color: '#f43f5e',
+                  fontWeight: 'bold',
+                  fontSize: 14,
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  zIndex: 20
+                }}
+                title="Delete node"
+                onClick={e => {
+                  e.stopPropagation();
+                  const event = new CustomEvent('deleteNode', { detail: { nodeId: node.id } });
+                  window.dispatchEvent(event);
+                }}
+              >×</button>
+            )}
           </div>
         );
       case 'diamond':
@@ -114,6 +165,31 @@ export const FlowchartNode = ({
             <div style={{ transform: 'rotate(-45deg)' }}>
               {content}
             </div>
+            {showDelete && (
+              <button
+                style={{
+                  position: 'absolute',
+                  top: 2,
+                  right: 2,
+                  width: 18,
+                  height: 18,
+                  background: 'white',
+                  border: '1px solid #f43f5e',
+                  color: '#f43f5e',
+                  fontWeight: 'bold',
+                  fontSize: 14,
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  zIndex: 20
+                }}
+                title="Delete node"
+                onClick={e => {
+                  e.stopPropagation();
+                  const event = new CustomEvent('deleteNode', { detail: { nodeId: node.id } });
+                  window.dispatchEvent(event);
+                }}
+              >×</button>
+            )}
           </div>
         );
       case 'text':
@@ -126,6 +202,31 @@ export const FlowchartNode = ({
             onDoubleClick={handleDoubleClick}
           >
             {content}
+            {showDelete && (
+              <button
+                style={{
+                  position: 'absolute',
+                  top: 2,
+                  right: 2,
+                  width: 18,
+                  height: 18,
+                  background: 'white',
+                  border: '1px solid #f43f5e',
+                  color: '#f43f5e',
+                  fontWeight: 'bold',
+                  fontSize: 14,
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  zIndex: 20
+                }}
+                title="Delete node"
+                onClick={e => {
+                  e.stopPropagation();
+                  const event = new CustomEvent('deleteNode', { detail: { nodeId: node.id } });
+                  window.dispatchEvent(event);
+                }}
+              >×</button>
+            )}
           </div>
         );
       default:
