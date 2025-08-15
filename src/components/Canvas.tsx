@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { Node, Edge, Tool } from '@/types/flowchart';
 import { FlowchartNode } from './FlowchartNode';
 
@@ -31,8 +31,9 @@ export const Canvas = ({
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [draggedNode, setDraggedNode] = useState<{ nodeId: string; offset: { x: number; y: number } } | null>(null);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.target === canvasRef.current) {
+      e.preventDefault();
       if (e.button === 0) { // Left click
         if (activeTool !== 'select' && activeTool !== 'connect') {
           const rect = canvasRef.current!.getBoundingClientRect();
@@ -44,7 +45,12 @@ export const Canvas = ({
         }
       }
     }
-  }, [activeTool, onCanvasClick, onNodeSelect, panOffset]);
+    
+    if (isPanning) {
+      setPanStart({ x: e.clientX, y: e.clientY });
+      document.body.style.cursor = 'grabbing';
+    }
+  }, [activeTool, onCanvasClick, onNodeSelect, panOffset, isPanning]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.code === 'Space' && !isPanning) {
@@ -77,18 +83,15 @@ export const Canvas = ({
     }
   }, [isPanning, panStart, draggedNode, onNodeUpdate, panOffset]);
 
-  const handleMouseUp = useCallback(() => {
+  const handleCanvasMouseUp = useCallback(() => {
     setDraggedNode(null);
-  }, []);
-
-  const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
     if (isPanning) {
-      setPanStart({ x: e.clientX, y: e.clientY });
-      document.body.style.cursor = 'grabbing';
+      document.body.style.cursor = 'grab';
     }
   }, [isPanning]);
 
   const startNodeDrag = useCallback((nodeId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     if (activeTool === 'select') {
       const node = nodes.find(n => n.id === nodeId);
       if (node) {
@@ -101,19 +104,19 @@ export const Canvas = ({
   }, [activeTool, nodes, panOffset]);
 
   // Event listeners
-  useState(() => {
+  useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
     document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('mouseup', handleCanvasMouseUp);
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keyup', handleKeyUp);
       document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mouseup', handleCanvasMouseUp);
     };
-  });
+  }, [handleKeyDown, handleKeyUp, handleMouseMove, handleCanvasMouseUp]);
 
   const renderEdge = (edge: Edge) => {
     const fromNode = nodes.find(n => n.id === edge.fromNodeId);
@@ -143,17 +146,17 @@ export const Canvas = ({
   return (
     <div 
       ref={canvasRef}
-      className="flex-1 relative overflow-hidden bg-background cursor-crosshair"
+      className="flex-1 relative overflow-hidden bg-background"
       style={{
         backgroundImage: `
           linear-gradient(hsl(var(--border)) 1px, transparent 1px),
           linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px)
         `,
         backgroundSize: '20px 20px',
-        backgroundPosition: `${panOffset.x}px ${panOffset.y}px`
+        backgroundPosition: `${panOffset.x}px ${panOffset.y}px`,
+        cursor: isPanning ? 'grab' : activeTool === 'select' ? 'default' : 'crosshair'
       }}
       onMouseDown={handleCanvasMouseDown}
-      onClick={handleMouseDown}
     >
       {/* Grid pattern */}
       
