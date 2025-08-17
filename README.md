@@ -1,73 +1,64 @@
-# Welcome to your Lovable project
 
-## Project info
+# Diagrammatic: Simple Flowchart Builder
 
-**URL**: https://lovable.dev/projects/dded8f69-4a79-4c59-b942-ce328ef37439
+Diagrammatic is a local-only, privacy-friendly web application for creating flowcharts and diagrams with ease. Built with React and TypeScript, it provides a modern, intuitive interface for quick diagramming—no external diagram libraries or cloud storage required.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- **Add All Common Flowchart Shapes:** Rectangle, circle, diamond, parallelogram, trapezoid, triangle, hexagon, cylinder, actor, annotation, line, bracket, cloud, star, and text.
+- **Drag-and-Drop Canvas:** Move nodes freely, pan the canvas, and zoom for large diagrams.
+- **Connectors:** Draw connectors between nodes with automatic boundary snapping.
+- **Edge Labels:** Add, edit, and delete labels on connectors. Robust editing with Enter/Escape support.
+- **Undo/Redo:** Full undo/redo support for all actions.
+- **Resizable Nodes:** Resize nodes from any edge or corner, with correct directionality and minimum size.
+- **Toolbar:** Shape palette for quick node creation.
+- **Sidebar Style Panel:** Edit node background and border color, and text content.
+- **Text Nodes:** Multi-line, auto-resizing, and boundary-wrapped text nodes.
+- **Delete Nodes/Edges:** Remove nodes or edges with a button or keyboard shortcut.
+- **No External Storage:** All data is local to your browser. No accounts, no cloud.
 
-**Use Lovable**
+## Getting Started
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/dded8f69-4a79-4c59-b942-ce328ef37439) and start prompting.
+1. **Install dependencies:**
+	```bash
+	npm install
+	```
+2. **Start the development server:**
+	```bash
+	npm run dev
+	```
+3. **Open your browser:**
+	Visit `http://localhost:5173` (or the port shown in your terminal).
 
-Changes made via Lovable will be committed automatically to this repo.
+## Usage
 
-**Use your preferred IDE**
+- Select a shape from the toolbar and click on the canvas to add it.
+- Drag nodes to move them. Use the handles to resize.
+- Click and drag from a node's connector point to another node to create an edge.
+- Double-click an edge label to edit it. Press Enter to save, Escape to cancel.
+- Use the sidebar to change node styles and text.
+- Use Undo/Redo buttons or Ctrl+Z/Ctrl+Y.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Project Structure
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- `src/` — Main source code
+  - `components/` — React components (Canvas, FlowchartNode, Toolbar, StylePanel, etc.)
+  - `hooks/` — Custom React hooks
+  - `lib/` — Utility functions
+  - `pages/` — App entry point
+  - `types/` — TypeScript types
+- `public/` — Static assets
+- `index.html` — Main HTML file
+- `tailwind.config.ts` — Tailwind CSS config
+- `vite.config.ts` — Vite config
 
-Follow these steps:
+## Tech Stack
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
+- React 18+
 - TypeScript
-- React
-- shadcn-ui
+- Vite
 - Tailwind CSS
 
-## How can I deploy this project?
+## License
 
-Simply open [Lovable](https://lovable.dev/projects/dded8f69-4a79-4c59-b942-ce328ef37439) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+MIT License. See [LICENSE](LICENSE) for details.
