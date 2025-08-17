@@ -235,19 +235,10 @@ export const Canvas = ({
     const mx = (start.x + end.x) / 2;
     const my = (start.y + end.y) / 2;
     const label = getEdgeLabel(edge);
-    // For label gap: shorten the line by 30px on each side if label exists or edge is selected
-    let lineStart = start, lineEnd = end;
+  let lineStart = start, lineEnd = end;
   const showLabelBox = !!label || selectedEdgeId === edge.id;
   const isEditingLabel = editingLabelEdgeId === edge.id;
-    if (showLabelBox) {
-      const dx = end.x - start.x, dy = end.y - start.y;
-      const len = Math.sqrt(dx * dx + dy * dy);
-      const gap = 30; // px
-      if (len > gap * 2) {
-        lineStart = { x: start.x + (dx * gap) / len, y: start.y + (dy * gap) / len };
-        lineEnd = { x: end.x - (dx * gap) / len, y: end.y - (dy * gap) / len };
-      }
-    }
+  // Always draw the line from node boundary to node boundary, even with a label
 
     return (
       <g key={edge.id}>

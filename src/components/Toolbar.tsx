@@ -1,6 +1,8 @@
-import { MousePointer, Square, Circle, Diamond, Type, GitBranch, Undo, Redo } from 'lucide-react';
+import { MousePointer, GitBranch, Undo, Redo } from 'lucide-react';
 import { Button } from './ui/button';
 import { Tool } from '@/types/flowchart';
+import * as DropdownMenu from './ui/dropdown-menu';
+import { ReactNode } from 'react';
 
 interface ToolbarProps {
   activeTool: Tool;
@@ -12,34 +14,78 @@ interface ToolbarProps {
 }
 
 export const Toolbar = ({ activeTool, onToolChange, onUndo, onRedo, canUndo, canRedo }: ToolbarProps) => {
-  const tools = [
-    { id: 'select' as Tool, icon: MousePointer, label: 'Select' },
-    { id: 'rectangle' as Tool, icon: Square, label: 'Rectangle' },
-    { id: 'circle' as Tool, icon: Circle, label: 'Circle' },
-    { id: 'diamond' as Tool, icon: Diamond, label: 'Diamond' },
-    { id: 'text' as Tool, icon: Type, label: 'Text' },
-    { id: 'connect' as Tool, icon: GitBranch, label: 'Connect' },
+  // List of shapes for dropdown
+  const shapes: { id: Tool, label: string, icon: ReactNode }[] = [
+    { id: 'rectangle', label: 'Rectangle', icon: <svg width="24" height="16"><rect x="2" y="2" width="20" height="12" rx="2" fill="#a5b4fc" stroke="#6366f1" strokeWidth="2"/></svg> },
+    { id: 'pill', label: 'Pill', icon: <svg width="24" height="16"><rect x="2" y="2" width="20" height="12" rx="8" fill="#fbcfe8" stroke="#f43f5e" strokeWidth="2"/></svg> },
+    { id: 'circle', label: 'Oval (Circle)', icon: <svg width="20" height="20"><ellipse cx="10" cy="10" rx="8" ry="8" fill="#f9a8d4" stroke="#be185d" strokeWidth="2"/></svg> },
+    { id: 'diamond', label: 'Diamond', icon: <svg width="20" height="20"><polygon points="10,2 18,10 10,18 2,10" fill="#fef08a" stroke="#eab308" strokeWidth="2"/></svg> },
+    { id: 'parallelogram', label: 'Parallelogram', icon: <svg width="24" height="16"><polygon points="6,2 22,2 18,14 2,14" fill="#bae6fd" stroke="#0ea5e9" strokeWidth="2"/></svg> },
+    { id: 'parallelogram-flip', label: 'Flipped Parallelogram', icon: <svg width="24" height="16"><polygon points="2,2 18,2 22,14 6,14" fill="#fca5a5" stroke="#ef4444" strokeWidth="2"/></svg> },
+    { id: 'trapezoid', label: 'Trapezoid', icon: <svg width="24" height="16"><polygon points="6,2 18,2 22,14 2,14" fill="#bbf7d0" stroke="#22c55e" strokeWidth="2"/></svg> },
+    { id: 'triangle', label: 'Triangle', icon: <svg width="20" height="20"><polygon points="10,2 18,18 2,18" fill="#fcd34d" stroke="#f59e42" strokeWidth="2"/></svg> },
+    { id: 'hexagon', label: 'Hexagon', icon: <svg width="24" height="20"><polygon points="6,2 18,2 22,10 18,18 6,18 2,10" fill="#a7f3d0" stroke="#059669" strokeWidth="2"/></svg> },
+    { id: 'cylinder', label: 'Cylinder', icon: <svg width="20" height="20"><ellipse cx="10" cy="5" rx="8" ry="3" fill="#f3e8ff" stroke="#a21caf" strokeWidth="2"/><rect x="2" y="5" width="16" height="10" fill="#f3e8ff" stroke="#a21caf" strokeWidth="2"/><ellipse cx="10" cy="15" rx="8" ry="3" fill="#f3e8ff" stroke="#a21caf" strokeWidth="2"/></svg> },
+    { id: 'actor', label: 'Sequence Diagram actor', icon: <svg width="20" height="20"><circle cx="10" cy="5" r="3" fill="#fef9c3" stroke="#eab308" strokeWidth="2"/><rect x="7" y="8" width="6" height="8" fill="#fef9c3" stroke="#eab308" strokeWidth="2"/></svg> },
+    { id: 'annotation', label: 'Annotation', icon: <svg width="24" height="16"><rect x="2" y="2" width="20" height="12" fill="#f1f5f9" stroke="#64748b" strokeWidth="2"/><polyline points="2,2 8,8 2,14" fill="none" stroke="#64748b" strokeWidth="2"/></svg> },
+    { id: 'line', label: 'Line', icon: <svg width="24" height="16"><line x1="2" y1="8" x2="22" y2="8" stroke="#64748b" strokeWidth="2"/></svg> },
+    { id: 'bracket', label: 'Bracket', icon: <svg width="20" height="20"><path d="M6 2 Q2 10 6 18" fill="none" stroke="#64748b" strokeWidth="2"/><path d="M14 2 Q18 10 14 18" fill="none" stroke="#64748b" strokeWidth="2"/></svg> },
+    { id: 'cloud', label: 'Cloud', icon: <svg width="24" height="16"><ellipse cx="8" cy="10" rx="5" ry="4" fill="#bae6fd" stroke="#0ea5e9" strokeWidth="2"/><ellipse cx="16" cy="8" rx="6" ry="5" fill="#bae6fd" stroke="#0ea5e9" strokeWidth="2"/></svg> },
+    { id: 'star', label: 'Star', icon: <svg width="20" height="20"><polygon points="10,2 12,8 18,8 13,12 15,18 10,14 5,18 7,12 2,8 8,8" fill="#fde68a" stroke="#f59e42" strokeWidth="2"/></svg> },
   ];
 
   return (
     <div className="h-14 border-b bg-background flex items-center px-4 gap-2">
       <div className="flex items-center gap-1">
-        {tools.map((tool) => (
-          <Button
-            key={tool.id}
-            variant={activeTool === tool.id ? "default" : "ghost"}
-            size="sm"
-            onClick={() => {
-              onToolChange(tool.id);
-            }}
-            className={`h-8 w-8 p-0${activeTool === tool.id ? ' ring-2 ring-blue-500' : ''}`}
-            aria-pressed={activeTool === tool.id}
-          >
-            <tool.icon className="h-4 w-4" />
-          </Button>
-        ))}
+        <Button
+          variant={activeTool === 'select' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => onToolChange('select')}
+          className={`h-8 w-8 p-0${activeTool === 'select' ? ' ring-2 ring-blue-500' : ''}`}
+          aria-pressed={activeTool === 'select'}
+        >
+          <MousePointer className="h-4 w-4" />
+        </Button>
+        <DropdownMenu.DropdownMenu>
+          <DropdownMenu.DropdownMenuTrigger asChild>
+            <Button
+              variant={shapes.some(s => s.id === activeTool) ? 'default' : 'ghost'}
+              size="sm"
+              className={`h-8 w-8 p-0${shapes.some(s => s.id === activeTool) ? ' ring-2 ring-blue-500' : ''}`}
+              aria-pressed={shapes.some(s => s.id === activeTool)}
+            >
+              {/* Shapes icon */}
+              <svg width="20" height="20" viewBox="0 0 20 20"><rect x="2" y="2" width="8" height="8" fill="#a5b4fc"/><circle cx="15" cy="6" r="4" fill="#f9a8d4"/><polygon points="10,18 18,18 14,12" fill="#fef08a"/></svg>
+            </Button>
+          </DropdownMenu.DropdownMenuTrigger>
+          <DropdownMenu.DropdownMenuContent sideOffset={8} align="start">
+            {shapes.map(shape => (
+              <DropdownMenu.DropdownMenuItem key={shape.id} onSelect={() => onToolChange(shape.id as Tool)} className="flex items-center gap-2">
+                {shape.icon}
+                <span>{shape.label}</span>
+              </DropdownMenu.DropdownMenuItem>
+            ))}
+          </DropdownMenu.DropdownMenuContent>
+        </DropdownMenu.DropdownMenu>
+        <Button
+          variant={activeTool === 'text' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => onToolChange('text')}
+          className={`h-8 w-8 p-0${activeTool === 'text' ? ' ring-2 ring-blue-500' : ''}`}
+          aria-pressed={activeTool === 'text'}
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20"><text x="3" y="16" fontSize="16" fontWeight="bold" fill="#64748b">T</text></svg>
+        </Button>
+        <Button
+          variant={activeTool === 'connect' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => onToolChange('connect')}
+          className={`h-8 w-8 p-0${activeTool === 'connect' ? ' ring-2 ring-blue-500' : ''}`}
+          aria-pressed={activeTool === 'connect'}
+        >
+          <GitBranch className="h-4 w-4" />
+        </Button>
       </div>
-      
       <div className="ml-4 flex items-center gap-1">
         <Button
           variant="ghost"

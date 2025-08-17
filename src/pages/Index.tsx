@@ -55,14 +55,38 @@ const Index = () => {
       backgroundColor: '#ffffff',
       borderColor: '#e5e7eb'
     };
-
     switch (type) {
       case 'rectangle':
         return { ...baseNode, width: 120, height: 60 };
+      case 'pill':
+        return { ...baseNode, width: 120, height: 48 };
       case 'circle':
         return { ...baseNode, width: 80, height: 80 };
       case 'diamond':
         return { ...baseNode, width: 100, height: 100 };
+      case 'parallelogram':
+      case 'parallelogram-flip':
+        return { ...baseNode, width: 120, height: 60 };
+      case 'trapezoid':
+        return { ...baseNode, width: 120, height: 60 };
+      case 'triangle':
+        return { ...baseNode, width: 100, height: 90 };
+      case 'hexagon':
+        return { ...baseNode, width: 120, height: 70 };
+      case 'cylinder':
+        return { ...baseNode, width: 100, height: 80 };
+      case 'actor':
+        return { ...baseNode, width: 60, height: 100 };
+      case 'annotation':
+        return { ...baseNode, width: 120, height: 60 };
+      case 'line':
+        return { ...baseNode, width: 120, height: 4 };
+      case 'bracket':
+        return { ...baseNode, width: 40, height: 100 };
+      case 'cloud':
+        return { ...baseNode, width: 120, height: 60 };
+      case 'star':
+        return { ...baseNode, width: 80, height: 80 };
       case 'text':
         return { ...baseNode, width: 100, height: 40 };
       default:
@@ -131,39 +155,49 @@ const Index = () => {
 
   const selectedNode = selectedNodeId ? state.nodes.find(n => n.id === selectedNodeId) || null : null;
 useEffect(() => {
-    function handleDeleteNode(e: any) {
-      const nodeId = e.detail?.nodeId;
-      if (!nodeId) return;
-      // Remove node and any connected edges
-      const newNodes = state.nodes.filter(n => n.id !== nodeId);
-      const newEdges = state.edges.filter(e => e.fromNodeId !== nodeId && e.toNodeId !== nodeId);
-      const newState = { ...state, nodes: newNodes, edges: newEdges };
-      saveToHistory(newState);
-      setSelectedNodeId(null);
-    }
-    function handleDeleteEdge(e: any) {
-      const edgeId = e.detail?.edgeId;
-      if (!edgeId) return;
-      const newEdges = state.edges.filter(edge => edge.id !== edgeId);
-      const newState = { ...state, edges: newEdges };
-      saveToHistory(newState);
-    }
-    function handleEditEdgeLabel(e: any) {
-      const { edgeId, label } = e.detail || {};
-      if (!edgeId) return;
-      const newEdges = state.edges.map(edge => edge.id === edgeId ? { ...edge, label } : edge);
-      const newState = { ...state, edges: newEdges };
-      saveToHistory(newState);
-    }
-    window.addEventListener('deleteNode', handleDeleteNode);
-    window.addEventListener('deleteEdge', handleDeleteEdge);
-    window.addEventListener('editEdgeLabel', handleEditEdgeLabel);
-    return () => {
-      window.removeEventListener('deleteNode', handleDeleteNode);
-      window.removeEventListener('deleteEdge', handleDeleteEdge);
-      window.removeEventListener('editEdgeLabel', handleEditEdgeLabel);
-    };
-  }, [state, saveToHistory]);
+  function handleResizeNode(e: any) {
+    const { nodeId, width, height, x, y } = e.detail || {};
+    if (!nodeId || typeof width !== 'number' || typeof height !== 'number') return;
+    const updates: any = { width, height };
+    if (typeof x === 'number') updates.x = x;
+    if (typeof y === 'number') updates.y = y;
+    handleNodeUpdate(nodeId, updates, false);
+  }
+  function handleDeleteNode(e: any) {
+    const nodeId = e.detail?.nodeId;
+    if (!nodeId) return;
+    // Remove node and any connected edges
+    const newNodes = state.nodes.filter(n => n.id !== nodeId);
+    const newEdges = state.edges.filter(e => e.fromNodeId !== nodeId && e.toNodeId !== nodeId);
+    const newState = { ...state, nodes: newNodes, edges: newEdges };
+    saveToHistory(newState);
+    setSelectedNodeId(null);
+  }
+  function handleDeleteEdge(e: any) {
+    const edgeId = e.detail?.edgeId;
+    if (!edgeId) return;
+    const newEdges = state.edges.filter(edge => edge.id !== edgeId);
+    const newState = { ...state, edges: newEdges };
+    saveToHistory(newState);
+  }
+  function handleEditEdgeLabel(e: any) {
+    const { edgeId, label } = e.detail || {};
+    if (!edgeId) return;
+    const newEdges = state.edges.map(edge => edge.id === edgeId ? { ...edge, label } : edge);
+    const newState = { ...state, edges: newEdges };
+    saveToHistory(newState);
+  }
+  window.addEventListener('deleteNode', handleDeleteNode);
+  window.addEventListener('deleteEdge', handleDeleteEdge);
+  window.addEventListener('editEdgeLabel', handleEditEdgeLabel);
+  window.addEventListener('resizeNode', handleResizeNode);
+  return () => {
+    window.removeEventListener('deleteNode', handleDeleteNode);
+    window.removeEventListener('deleteEdge', handleDeleteEdge);
+    window.removeEventListener('editEdgeLabel', handleEditEdgeLabel);
+    window.removeEventListener('resizeNode', handleResizeNode);
+  };
+}, [state, saveToHistory]);
 
   return (
     <div className="h-screen flex flex-col bg-background">

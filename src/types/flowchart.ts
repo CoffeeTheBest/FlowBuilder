@@ -1,6 +1,6 @@
 export interface Node {
   id: string;
-  type: 'rectangle' | 'circle' | 'diamond' | 'text';
+  type: Tool;
   x: number;
   y: number;
   width: number;
@@ -22,4 +22,23 @@ export interface FlowchartState {
   edges: Edge[];
 }
 
-export type Tool = 'select' | 'rectangle' | 'circle' | 'diamond' | 'text' | 'connect';
+export type Tool =
+  | 'select'
+  | 'rectangle'
+  | 'pill'
+  | 'circle'
+  | 'diamond'
+  | 'parallelogram'
+  | 'parallelogram-flip'
+  | 'trapezoid'
+  | 'triangle'
+  | 'hexagon'
+  | 'cylinder'
+  | 'actor'
+  | 'annotation'
+  | 'line'
+  | 'bracket'
+  | 'cloud'
+  | 'star'
+  | 'text'
+  | 'connect';
