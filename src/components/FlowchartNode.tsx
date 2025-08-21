@@ -9,6 +9,8 @@ interface FlowchartNodeProps {
   onMouseDown: (e: React.MouseEvent) => void;
   onClick: () => void;
   onTextChange: (text: string) => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }
 
 export const FlowchartNode = ({
@@ -18,7 +20,9 @@ export const FlowchartNode = ({
   panOffset,
   onMouseDown,
   onClick,
-  onTextChange
+  onTextChange,
+  onMouseEnter,
+  onMouseLeave
 }: FlowchartNodeProps) => {
   const [editValue, setEditValue] = useState(node.text);
   const [isEditing, setIsEditing] = useState(false);
@@ -289,6 +293,8 @@ export const FlowchartNode = ({
             onMouseDown={onMouseDown}
             onMouseUp={handleMouseUp}
             onDoubleClick={handleDoubleClick}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
           >
             {isDiamond ? (
               <div style={{ transform: 'rotate(-45deg)', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -335,6 +341,8 @@ export const FlowchartNode = ({
             onMouseDown={onMouseDown}
             onMouseUp={handleMouseUp}
             onDoubleClick={handleDoubleClick}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
           >
             {content}
             {showDelete && (
@@ -352,6 +360,8 @@ export const FlowchartNode = ({
             onMouseDown={onMouseDown}
             onMouseUp={handleMouseUp}
             onDoubleClick={handleDoubleClick}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
           >
             <div style={{ transform: 'skew(20deg)', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{content}</div>
             {showDelete && (
@@ -369,6 +379,8 @@ export const FlowchartNode = ({
             onMouseDown={onMouseDown}
             onMouseUp={handleMouseUp}
             onDoubleClick={handleDoubleClick}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
           >
             <div style={{ transform: 'skew(-20deg)', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{content}</div>
             {showDelete && (
@@ -386,6 +398,8 @@ export const FlowchartNode = ({
             onMouseDown={onMouseDown}
             onMouseUp={handleMouseUp}
             onDoubleClick={handleDoubleClick}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
           >
             {content}
             {showDelete && (
@@ -403,6 +417,8 @@ export const FlowchartNode = ({
             onMouseDown={onMouseDown}
             onMouseUp={handleMouseUp}
             onDoubleClick={handleDoubleClick}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
           >
             {content}
             {showDelete && (
@@ -420,6 +436,8 @@ export const FlowchartNode = ({
             onMouseDown={onMouseDown}
             onMouseUp={handleMouseUp}
             onDoubleClick={handleDoubleClick}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
           >
             {content}
             {showDelete && (
@@ -437,6 +455,8 @@ export const FlowchartNode = ({
             onMouseDown={onMouseDown}
             onMouseUp={handleMouseUp}
             onDoubleClick={handleDoubleClick}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
           >
             {content}
             {showDelete && (
@@ -455,6 +475,8 @@ export const FlowchartNode = ({
             onMouseDown={onMouseDown}
             onMouseUp={handleMouseUp}
             onDoubleClick={handleDoubleClick}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
           >
             <svg width={node.width} height={node.height} viewBox={`0 0 60 100`} style={{ display: 'block' }}>
               <circle cx="30" cy="20" r="15" stroke={node.borderColor} strokeWidth="2" fill={node.backgroundColor} />
@@ -480,6 +502,8 @@ export const FlowchartNode = ({
             onMouseDown={onMouseDown}
             onMouseUp={handleMouseUp}
             onDoubleClick={handleDoubleClick}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
           >
             {content}
             {showDelete && (
@@ -496,6 +520,8 @@ export const FlowchartNode = ({
             style={{ ...style, height: 4, minHeight: 4, backgroundColor: node.borderColor, border: 'none' }}
             onMouseDown={onMouseDown}
             onMouseUp={handleMouseUp}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
           />
         );
       }
@@ -506,6 +532,8 @@ export const FlowchartNode = ({
             style={{ ...style, background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onMouseDown={onMouseDown}
             onMouseUp={handleMouseUp}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
           >
             <svg width={node.width} height={node.height} viewBox={`0 0 40 100`} style={{ display: 'block' }}>
               <path d="M30,5 Q10,50 30,95" stroke={node.borderColor} strokeWidth="4" fill="none" />
@@ -524,6 +552,8 @@ export const FlowchartNode = ({
             style={{ ...style, background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onMouseDown={onMouseDown}
             onMouseUp={handleMouseUp}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
           >
             <svg width={node.width} height={node.height} viewBox={`0 0 120 60`} style={{ display: 'block' }}>
               <ellipse cx="40" cy="30" rx="30" ry="20" fill={node.backgroundColor} stroke={node.borderColor} strokeWidth="2" />
@@ -545,6 +575,8 @@ export const FlowchartNode = ({
             style={{ ...style, background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onMouseDown={onMouseDown}
             onMouseUp={handleMouseUp}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
           >
             <svg width={node.width} height={node.height} viewBox={`0 0 80 80`} style={{ display: 'block' }}>
               <polygon points="40,5 48,30 75,30 52,47 60,72 40,57 20,72 28,47 5,30 32,30" fill={node.backgroundColor} stroke={node.borderColor} strokeWidth="2" />

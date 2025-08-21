@@ -59,6 +59,7 @@ export const Canvas = ({
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [draggedNode, setDraggedNode] = useState<{ nodeId: string; offset: { x: number; y: number } } | null>(null);
   const [hasDragged, setHasDragged] = useState(false);
+  const [isOverInteractive, setIsOverInteractive] = useState(false);
 
   const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
     
@@ -74,34 +75,17 @@ export const Canvas = ({
           const x = e.clientX - rect.left - panOffset.x;
           const y = e.clientY - rect.top - panOffset.y;
           onCanvasClick(x, y);
-        } else {
+        } else if (!isOverInteractive) {
           onNodeSelect(null);
+          // Start panning if not over interactive elements
+          setIsPanning(true);
+          setPanStart({ x: e.clientX, y: e.clientY });
+          document.body.style.cursor = 'grabbing';
         }
       }
     }
-    
-    // Only start panning if space is held and left mouse button is pressed
-    if (isPanning && e.button === 0) {
-      setPanStart({ x: e.clientX, y: e.clientY });
-      document.body.style.cursor = 'grabbing';
-    }
-  }, [activeTool, onCanvasClick, onNodeSelect, panOffset, isPanning]);
+  }, [activeTool, onCanvasClick, onNodeSelect, panOffset, isOverInteractive]);
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.code === 'Space' && !isPanning) {
-      e.preventDefault();
-      setIsPanning(true);
-      document.body.style.cursor = 'grab';
-      setDraggedNode(null); // Prevent node drag while panning
-    }
-  }, [isPanning]);
-
-  const handleKeyUp = useCallback((e: KeyboardEvent) => {
-    if (e.code === 'Space') {
-      setIsPanning(false);
-      document.body.style.cursor = 'default';
-    }
-  }, []);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isPanning) {
@@ -130,14 +114,13 @@ export const Canvas = ({
     }
     setDraggedNode(null);
     setHasDragged(false);
-    if (isPanning) {
-      document.body.style.cursor = 'grab';
-    }
-  }, [isPanning, draggedNode, hasDragged, onNodeUpdate]);
+    setIsPanning(false);
+    document.body.style.cursor = isOverInteractive ? 'pointer' : 'default';
+  }, [draggedNode, hasDragged, onNodeUpdate, isOverInteractive]);
 
   const startNodeDrag = useCallback((nodeId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (activeTool === 'select' && !isPanning && e.button === 0) {
+    if (activeTool === 'select' && e.button === 0) {
       const node = nodes.find(n => n.id === nodeId);
       if (node) {
         const rect = canvasRef.current!.getBoundingClientRect();
@@ -145,24 +128,22 @@ export const Canvas = ({
         const offsetY = e.clientY - rect.top - node.y - panOffset.y;
         setDraggedNode({ nodeId, offset: { x: offsetX, y: offsetY } });
         setHasDragged(false);
+        // Prevent panning while dragging nodes
+        setIsPanning(false);
       }
     }
-  }, [activeTool, nodes, panOffset, isPanning]);
+  }, [activeTool, nodes, panOffset]);
 
   // Event listeners
   useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keyup', handleKeyUp);
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleCanvasMouseUp);
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('keyup', handleKeyUp);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleCanvasMouseUp);
     };
-  }, [handleKeyDown, handleKeyUp, handleMouseMove, handleCanvasMouseUp]);
+  }, [handleMouseMove, handleCanvasMouseUp]);
 
   // Helper: get intersection point with node boundary
   function getBoundaryPoint(node, targetX, targetY) {
@@ -209,6 +190,15 @@ export const Canvas = ({
     setSelectedEdgeId(edgeId);
   }
 
+  // Helper for edge hover
+  function handleEdgeMouseEnter() {
+    setIsOverInteractive(true);
+  }
+
+  function handleEdgeMouseLeave() {
+    setIsOverInteractive(false);
+  }
+
   // Helper for edge label editing
   function handleEdgeLabelChange(edgeId: string, label: string) {
     // Emit a custom event to parent to update edge label
@@ -253,6 +243,8 @@ export const Canvas = ({
           markerEnd="url(#arrowhead)"
           style={{ cursor: 'pointer' }}
           onClick={e => handleEdgeClick(e, edge.id)}
+          onMouseEnter={handleEdgeMouseEnter}
+          onMouseLeave={handleEdgeMouseLeave}
         />
         {/* Edge label (always show box if selected) */}
         {showLabelBox && (
@@ -281,6 +273,8 @@ export const Canvas = ({
               contentEditable={selectedEdgeId === edge.id}
               suppressContentEditableWarning
               onClick={e => handleEdgeClick(e, edge.id)}
+              onMouseEnter={handleEdgeMouseEnter}
+              onMouseLeave={handleEdgeMouseLeave}
               onFocus={() => setEditingLabelEdgeId(edge.id)}
               onBlur={e => {
                 setEditingLabelEdgeId(null);
@@ -346,7 +340,7 @@ export const Canvas = ({
           ${panOffset.x}px ${panOffset.y}px,
           ${panOffset.x}px ${panOffset.y}px
         `,
-        cursor: isPanning ? 'grab' : activeTool === 'select' ? 'default' : 'crosshair',
+        cursor: isPanning ? 'grabbing' : isOverInteractive ? 'pointer' : activeTool === 'select' ? 'grab' : 'crosshair',
         width: '100%',
         height: '100%',
         minHeight: 0,
@@ -393,6 +387,8 @@ export const Canvas = ({
           onMouseDown={(e) => startNodeDrag(node.id, e)}
           onClick={() => onNodeClick(node.id)}
           onTextChange={(text) => onNodeUpdate(node.id, { text })}
+          onMouseEnter={() => setIsOverInteractive(true)}
+          onMouseLeave={() => setIsOverInteractive(false)}
         />
       ))}
 
