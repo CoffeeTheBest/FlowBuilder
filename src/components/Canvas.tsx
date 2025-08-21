@@ -29,6 +29,7 @@ export const Canvas = ({
   // Listen for delete key to remove selected edge
   // Track if label is being edited
   const [editingLabelEdgeId, setEditingLabelEdgeId] = useState<string | null>(null);
+  const [editingLabelText, setEditingLabelText] = useState<string>('');
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Prevent edge deletion if editing label
@@ -255,64 +256,96 @@ export const Canvas = ({
             height={32}
             style={{ pointerEvents: 'auto' }}
           >
-            <div
-              style={{
-                background: 'white',
-                borderRadius: 8,
-                border: '1px solid #ddd',
-                textAlign: 'center',
-                fontSize: 14,
-                lineHeight: '32px',
-                width: 60,
-                height: 32,
-                margin: 'auto',
-                userSelect: 'text',
-                cursor: 'pointer',
-                boxShadow: selectedEdgeId === edge.id ? '0 0 0 2px #f59e0b' : undefined
-              }}
-              contentEditable={selectedEdgeId === edge.id}
-              suppressContentEditableWarning
-              onClick={e => handleEdgeClick(e, edge.id)}
-              onMouseEnter={handleEdgeMouseEnter}
-              onMouseLeave={handleEdgeMouseLeave}
-              onFocus={() => setEditingLabelEdgeId(edge.id)}
-              onBlur={e => {
-                setEditingLabelEdgeId(null);
-                handleEdgeLabelChange(edge.id, e.currentTarget.textContent || '');
-              }}
-              onKeyDown={e => {
-                if (e.key === 'Enter') {
-                  (e.target as HTMLElement).blur();
-                }
-              }}
-            >
-              {label}
-              {/* Delete button for edge label */}
-              {selectedEdgeId === edge.id && !isEditingLabel && (
-                <button
-                  style={{
-                    position: 'absolute',
-                    right: -18,
-                    top: 0,
-                    width: 18,
-                    height: 18,
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#f43f5e',
-                    fontWeight: 'bold',
-                    fontSize: 16,
-                    cursor: 'pointer',
-                  }}
-                  title="Delete edge"
-                  onClick={e => {
-                    e.stopPropagation();
-                    const event = new CustomEvent('deleteEdge', { detail: { edgeId: edge.id } });
-                    window.dispatchEvent(event);
-                    setSelectedEdgeId(null);
-                  }}
-                >×</button>
-              )}
-            </div>
+            {isEditingLabel ? (
+              <input
+                type="text"
+                value={editingLabelText}
+                onChange={e => setEditingLabelText(e.target.value)}
+                onBlur={() => {
+                  setEditingLabelEdgeId(null);
+                  handleEdgeLabelChange(edge.id, editingLabelText);
+                }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    setEditingLabelEdgeId(null);
+                    handleEdgeLabelChange(edge.id, editingLabelText);
+                    (e.target as HTMLInputElement).blur();
+                  }
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    setEditingLabelEdgeId(null);
+                    setEditingLabelText(label);
+                  }
+                }}
+                autoFocus
+                style={{
+                  background: 'white',
+                  border: '1px solid #ddd',
+                  borderRadius: 8,
+                  textAlign: 'center',
+                  fontSize: 14,
+                  width: 60,
+                  height: 32,
+                  margin: 'auto',
+                  outline: 'none',
+                  boxShadow: '0 0 0 2px #f59e0b'
+                }}
+                onClick={e => e.stopPropagation()}
+              />
+            ) : (
+              <div
+                style={{
+                  background: 'white',
+                  borderRadius: 8,
+                  border: '1px solid #ddd',
+                  textAlign: 'center',
+                  fontSize: 14,
+                  lineHeight: '32px',
+                  width: 60,
+                  height: 32,
+                  margin: 'auto',
+                  cursor: 'pointer',
+                  boxShadow: selectedEdgeId === edge.id ? '0 0 0 2px #f59e0b' : undefined
+                }}
+                onClick={e => {
+                  handleEdgeClick(e, edge.id);
+                  if (selectedEdgeId === edge.id) {
+                    setEditingLabelEdgeId(edge.id);
+                    setEditingLabelText(label);
+                  }
+                }}
+                onMouseEnter={handleEdgeMouseEnter}
+                onMouseLeave={handleEdgeMouseLeave}
+              >
+                {label || 'Label'}
+                {/* Delete button for edge label */}
+                {selectedEdgeId === edge.id && !isEditingLabel && (
+                  <button
+                    style={{
+                      position: 'absolute',
+                      right: -18,
+                      top: 0,
+                      width: 18,
+                      height: 18,
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#f43f5e',
+                      fontWeight: 'bold',
+                      fontSize: 16,
+                      cursor: 'pointer',
+                    }}
+                    title="Delete edge"
+                    onClick={e => {
+                      e.stopPropagation();
+                      const event = new CustomEvent('deleteEdge', { detail: { edgeId: edge.id } });
+                      window.dispatchEvent(event);
+                      setSelectedEdgeId(null);
+                    }}
+                  >×</button>
+                )}
+              </div>
+            )}
           </foreignObject>
         )}
       </g>
