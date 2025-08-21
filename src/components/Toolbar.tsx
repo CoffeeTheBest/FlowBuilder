@@ -1,4 +1,4 @@
-import { MousePointer, GitBranch, Undo, Redo } from 'lucide-react';
+import { MousePointer, GitBranch, Undo, Redo, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { Tool } from '@/types/flowchart';
 import * as DropdownMenu from './ui/dropdown-menu';
@@ -11,9 +11,24 @@ interface ToolbarProps {
   onRedo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  zoomLevel: number;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onZoomReset: () => void;
 }
 
-export const Toolbar = ({ activeTool, onToolChange, onUndo, onRedo, canUndo, canRedo }: ToolbarProps) => {
+export const Toolbar = ({ 
+  activeTool, 
+  onToolChange, 
+  onUndo, 
+  onRedo, 
+  canUndo, 
+  canRedo, 
+  zoomLevel, 
+  onZoomIn, 
+  onZoomOut, 
+  onZoomReset 
+}: ToolbarProps) => {
   // List of shapes for dropdown
   const shapes: { id: Tool, label: string, icon: ReactNode }[] = [
     { id: 'rectangle', label: 'Rectangle', icon: <svg width="24" height="16"><rect x="2" y="2" width="20" height="12" rx="2" fill="#a5b4fc" stroke="#6366f1" strokeWidth="2"/></svg> },
@@ -104,6 +119,36 @@ export const Toolbar = ({ activeTool, onToolChange, onUndo, onRedo, canUndo, can
           className="h-8 w-8 p-0"
         >
           <Redo className="h-4 w-4" />
+        </Button>
+      </div>
+      
+      <div className="ml-4 flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onZoomOut}
+          disabled={zoomLevel <= 0.1}
+          className="h-8 w-8 p-0"
+          title="Zoom Out (Ctrl + -)"
+        >
+          <ZoomOut className="h-4 w-4" />
+        </Button>
+        <button
+          onClick={onZoomReset}
+          className="h-8 min-w-[60px] px-2 text-sm font-medium bg-background border border-border rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+          title="Reset Zoom (Ctrl + 0)"
+        >
+          {Math.round(zoomLevel * 100)}%
+        </button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onZoomIn}
+          disabled={zoomLevel >= 2}
+          className="h-8 w-8 p-0"
+          title="Zoom In (Ctrl + +)"
+        >
+          <ZoomIn className="h-4 w-4" />
         </Button>
       </div>
     </div>

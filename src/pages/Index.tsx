@@ -30,7 +30,7 @@ const Index = () => {
   const [historyIndex, setHistoryIndex] = useState(0);
   const [activeTool, setActiveTool] = useState<Tool>('select');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
 
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
 
@@ -153,7 +153,40 @@ const Index = () => {
     }
   }, [historyIndex, history]);
 
+  const handleZoomIn = useCallback(() => {
+    setZoomLevel(prev => Math.min(prev + 0.1, 2)); // Max zoom 200%
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setZoomLevel(prev => Math.max(prev - 0.1, 0.1)); // Min zoom 10%
+  }, []);
+
+  const handleZoomReset = useCallback(() => {
+    setZoomLevel(1);
+  }, []);
+
   const selectedNode = selectedNodeId ? state.nodes.find(n => n.id === selectedNodeId) || null : null;
+
+  // Add keyboard shortcuts for zoom
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === '=' || e.key === '+') {
+          e.preventDefault();
+          handleZoomIn();
+        } else if (e.key === '-') {
+          e.preventDefault();
+          handleZoomOut();
+        } else if (e.key === '0') {
+          e.preventDefault();
+          handleZoomReset();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleZoomIn, handleZoomOut, handleZoomReset]);
 useEffect(() => {
   function handleResizeNode(e: any) {
     const { nodeId, width, height, x, y } = e.detail || {};
@@ -208,6 +241,10 @@ useEffect(() => {
         onRedo={handleRedo}
         canUndo={historyIndex > 0}
         canRedo={historyIndex < history.length - 1}
+        zoomLevel={zoomLevel}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onZoomReset={handleZoomReset}
       />
       
       <div className="flex-1 relative">
@@ -221,6 +258,7 @@ useEffect(() => {
           onCanvasClick={handleCanvasClick}
           onNodeClick={handleNodeClick}
           connectingFrom={connectingFrom}
+          zoomLevel={zoomLevel}
         />
         
         <StylePanel

@@ -12,6 +12,7 @@ type CanvasProps = {
   onCanvasClick: (x: number, y: number) => void;
   onNodeClick: (nodeId: string) => void;
   connectingFrom: string | null;
+  zoomLevel: number;
 };
 
 export const Canvas = ({
@@ -23,7 +24,8 @@ export const Canvas = ({
   onNodeSelect,
   onCanvasClick,
   onNodeClick,
-  connectingFrom
+  connectingFrom,
+  zoomLevel
 }: CanvasProps) => {
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   // Listen for delete key to remove selected edge
@@ -73,8 +75,8 @@ export const Canvas = ({
       if (e.button === 0) { // Left click
         if (activeTool !== 'select' && activeTool !== 'connect') {
           const rect = canvasRef.current!.getBoundingClientRect();
-          const x = e.clientX - rect.left - panOffset.x;
-          const y = e.clientY - rect.top - panOffset.y;
+          const x = (e.clientX - rect.left - panOffset.x) / zoomLevel;
+          const y = (e.clientY - rect.top - panOffset.y) / zoomLevel;
           onCanvasClick(x, y);
         } else if (!isOverInteractive) {
           onNodeSelect(null);
@@ -102,11 +104,11 @@ export const Canvas = ({
       if (e.buttons !== 1) return; // Only drag while mouse is down
       setHasDragged(true);
       const rect = canvasRef.current!.getBoundingClientRect();
-      const x = e.clientX - rect.left - draggedNode.offset.x - panOffset.x;
-      const y = e.clientY - rect.top - draggedNode.offset.y - panOffset.y;
+      const x = (e.clientX - rect.left - draggedNode.offset.x - panOffset.x) / zoomLevel;
+      const y = (e.clientY - rect.top - draggedNode.offset.y - panOffset.y) / zoomLevel;
       onNodeUpdate(draggedNode.nodeId, { x, y }, false);
     }
-  }, [isPanning, panStart, draggedNode, onNodeUpdate, panOffset]);
+  }, [isPanning, panStart, draggedNode, onNodeUpdate, panOffset, zoomLevel]);
 
   const handleCanvasMouseUp = useCallback(() => {
     if (draggedNode && hasDragged) {
@@ -125,15 +127,15 @@ export const Canvas = ({
       const node = nodes.find(n => n.id === nodeId);
       if (node) {
         const rect = canvasRef.current!.getBoundingClientRect();
-        const offsetX = e.clientX - rect.left - node.x - panOffset.x;
-        const offsetY = e.clientY - rect.top - node.y - panOffset.y;
+        const offsetX = e.clientX - rect.left - (node.x * zoomLevel) - panOffset.x;
+        const offsetY = e.clientY - rect.top - (node.y * zoomLevel) - panOffset.y;
         setDraggedNode({ nodeId, offset: { x: offsetX, y: offsetY } });
         setHasDragged(false);
         // Prevent panning while dragging nodes
         setIsPanning(false);
       }
     }
-  }, [activeTool, nodes, panOffset]);
+  }, [activeTool, nodes, panOffset, zoomLevel]);
 
   // Event listeners
   useEffect(() => {
@@ -366,7 +368,7 @@ export const Canvas = ({
           linear-gradient(#cbd5e1 2px, transparent 2px),
           linear-gradient(90deg, #cbd5e1 2px, transparent 2px)
         `,
-        backgroundSize: '20px 20px, 20px 20px, 100px 100px, 100px 100px',
+        backgroundSize: `${20 * zoomLevel}px ${20 * zoomLevel}px, ${20 * zoomLevel}px ${20 * zoomLevel}px, ${100 * zoomLevel}px ${100 * zoomLevel}px, ${100 * zoomLevel}px ${100 * zoomLevel}px`,
         backgroundPosition: `
           ${panOffset.x}px ${panOffset.y}px,
           ${panOffset.x}px ${panOffset.y}px,
@@ -384,46 +386,56 @@ export const Canvas = ({
     >
       {/* Grid pattern */}
       
-      {/* SVG for edges */}
-      <svg
-        className="absolute left-0 top-0 pointer-events-auto"
-        width="100%"
-        height="100%"
-        style={{ zIndex: 1 }}
+      {/* Zoomable content container */}
+      <div
+        style={{
+          transform: `scale(${zoomLevel})`,
+          transformOrigin: '0 0',
+          width: `${100 / zoomLevel}%`,
+          height: `${100 / zoomLevel}%`,
+        }}
       >
-        <defs>
-          <marker
-            id="arrowhead"
-            markerWidth="10"
-            markerHeight="7"
-            refX="9"
-            refY="3.5"
-            orient="auto"
-          >
-            <polygon
-              points="0 0, 10 3.5, 0 7"
-              fill="#000"
-            />
-          </marker>
-        </defs>
-        {edges.map(renderEdge)}
-      </svg>
+        {/* SVG for edges */}
+        <svg
+          className="absolute left-0 top-0 pointer-events-auto"
+          width="100%"
+          height="100%"
+          style={{ zIndex: 1 }}
+        >
+          <defs>
+            <marker
+              id="arrowhead"
+              markerWidth="10"
+              markerHeight="7"
+              refX="9"
+              refY="3.5"
+              orient="auto"
+            >
+              <polygon
+                points="0 0, 10 3.5, 0 7"
+                fill="#000"
+              />
+            </marker>
+          </defs>
+          {edges.map(renderEdge)}
+        </svg>
 
-      {/* Nodes */}
-      {nodes.map((node) => (
-        <FlowchartNode
-          key={node.id}
-          node={node}
-          isSelected={selectedNodeId === node.id}
-          isConnecting={connectingFrom === node.id}
-          panOffset={panOffset}
-          onMouseDown={(e) => startNodeDrag(node.id, e)}
-          onClick={() => onNodeClick(node.id)}
-          onTextChange={(text) => onNodeUpdate(node.id, { text })}
-          onMouseEnter={() => setIsOverInteractive(true)}
-          onMouseLeave={() => setIsOverInteractive(false)}
-        />
-      ))}
+        {/* Nodes */}
+        {nodes.map((node) => (
+          <FlowchartNode
+            key={node.id}
+            node={node}
+            isSelected={selectedNodeId === node.id}
+            isConnecting={connectingFrom === node.id}
+            panOffset={panOffset}
+            onMouseDown={(e) => startNodeDrag(node.id, e)}
+            onClick={() => onNodeClick(node.id)}
+            onTextChange={(text) => onNodeUpdate(node.id, { text })}
+            onMouseEnter={() => setIsOverInteractive(true)}
+            onMouseLeave={() => setIsOverInteractive(false)}
+          />
+        ))}
+      </div>
 
       {/* Empty state */}
       {nodes.length === 0 && (
