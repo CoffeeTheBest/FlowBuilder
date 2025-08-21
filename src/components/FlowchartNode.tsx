@@ -26,14 +26,6 @@ export const FlowchartNode = ({
 }: FlowchartNodeProps) => {
   const [editValue, setEditValue] = useState(node.text);
   const [isEditing, setIsEditing] = useState(false);
-  const [isResizing, setIsResizing] = useState(false);
-  const resizeStart = useRef<{ x: number; y: number; width: number; height: number, handle?: string } | null>(null);
-  const resizingRef = useRef(false);
-  const currentHandleRef = useRef<string | null>(null);
-  const nodeIdRef = useRef<string>(node.id);
-  nodeIdRef.current = node.id;
-
-  // Global handlers must be defined at top level
 
   const handleDoubleClick = () => {
     setEditValue(node.text);
@@ -53,127 +45,6 @@ export const FlowchartNode = ({
     setIsEditing(false);
   };
 
-  // Handles: corners (nw, ne, sw, se), sides (n, s, w, e)
-  // Store the current handle in a ref for use in global listeners
-
-  // Stable mousemove/mouseup handlers using useCallback
-  const onMouseMove = useCallback((moveEvent: MouseEvent) => {
-    if (!resizeStart.current || !resizingRef.current || !currentHandleRef.current) return;
-    const handle = currentHandleRef.current;
-    const dx = moveEvent.clientX - resizeStart.current.x;
-    const dy = moveEvent.clientY - resizeStart.current.y;
-    let { width: startWidth, height: startHeight } = resizeStart.current;
-    let newWidth = startWidth;
-    let newHeight = startHeight;
-    let newX = node.x;
-    let newY = node.y;
-    // Corners
-    if (handle === 'se') {
-      newWidth = startWidth + dx;
-      newHeight = startHeight + dy;
-    } else if (handle === 'ne') {
-      newWidth = startWidth + dx;
-      newHeight = startHeight - dy;
-      newY = node.y + dy;
-    } else if (handle === 'sw') {
-      newWidth = startWidth - dx;
-      newHeight = startHeight + dy;
-      newX = node.x + dx;
-    } else if (handle === 'nw') {
-      newWidth = startWidth - dx;
-      newHeight = startHeight - dy;
-      newX = node.x + dx;
-      newY = node.y + dy;
-    }
-    // Sides
-    else if (handle === 'n') {
-      newHeight = startHeight - dy;
-      newY = node.y + dy;
-    } else if (handle === 's') {
-      newHeight = startHeight + dy;
-    } else if (handle === 'e') {
-      newWidth = startWidth + dx;
-    } else if (handle === 'w') {
-      newWidth = startWidth - dx;
-      newX = node.x + dx;
-    }
-    newWidth = Math.max(40, newWidth);
-    newHeight = Math.max(30, newHeight);
-    // Prevent flipping
-    if (newWidth !== startWidth && newWidth === 40) newX = handle.includes('w') ? node.x + (startWidth - 40) : newX;
-    if (newHeight !== startHeight && newHeight === 30) newY = handle.includes('n') ? node.y + (startHeight - 30) : newY;
-    if (resizingRef.current) {
-      const event = new CustomEvent('resizeNode', { detail: { nodeId: node.id, width: newWidth, height: newHeight, x: newX, y: newY } });
-      window.dispatchEvent(event);
-    }
-  }, [node.id, node.x, node.y]);
-
-  const onMouseUp = useCallback(() => {
-    resizingRef.current = false;
-    setIsResizing(false);
-    resizeStart.current = null;
-    currentHandleRef.current = null;
-    document.body.style.cursor = '';
-    window.removeEventListener('mousemove', onMouseMove);
-    window.removeEventListener('mouseup', onMouseUp);
-  }, [onMouseMove]);
-
-  const handleResizeMouseDown = useCallback((e: React.MouseEvent, handle: 'se' | 'ne' | 'sw' | 'nw' | 'n' | 's' | 'e' | 'w') => {
-    e.stopPropagation();
-    setIsResizing(true);
-    resizingRef.current = true;
-    currentHandleRef.current = handle;
-    resizeStart.current = {
-      x: e.clientX,
-      y: e.clientY,
-      width: node.width,
-      height: node.height,
-      handle
-    };
-    // Set cursor
-    const cursors: Record<string, string> = {
-      se: 'nwse-resize',
-      nw: 'nwse-resize',
-      ne: 'nesw-resize',
-      sw: 'nesw-resize',
-      n: 'ns-resize',
-      s: 'ns-resize',
-      e: 'ew-resize',
-      w: 'ew-resize',
-    };
-    document.body.style.cursor = cursors[handle] || 'default';
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
-  }, [node.width, node.height, onMouseMove, onMouseUp]);
-
-  // Clean up listeners if component unmounts during resize
-  useLayoutEffect(() => {
-    return () => {
-      resizingRef.current = false;
-      document.body.style.cursor = '';
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-    };
-  }, []);
-
-  function renderResizeHandles() {
-    if (!isSelected) return null;
-    const size = 12, offset = -6, border = '2px solid #888', bg = '#fff', z = 30;
-    return (
-      <>
-        {/* Corners */}
-        <div style={{ position: 'absolute', left: offset, top: offset, width: size, height: size, background: bg, border, borderRadius: 3, cursor: 'nwse-resize', zIndex: z }} onMouseDown={e => handleResizeMouseDown(e, 'nw')} />
-        <div style={{ position: 'absolute', right: offset, top: offset, width: size, height: size, background: bg, border, borderRadius: 3, cursor: 'nesw-resize', zIndex: z }} onMouseDown={e => handleResizeMouseDown(e, 'ne')} />
-        <div style={{ position: 'absolute', left: offset, bottom: offset, width: size, height: size, background: bg, border, borderRadius: 3, cursor: 'nesw-resize', zIndex: z }} onMouseDown={e => handleResizeMouseDown(e, 'sw')} />
-        <div style={{ position: 'absolute', right: offset, bottom: offset, width: size, height: size, background: bg, border, borderRadius: 3, cursor: 'nwse-resize', zIndex: z }} onMouseDown={e => handleResizeMouseDown(e, 'se')} />
-        {/* Sides */}
-        <div style={{ position: 'absolute', left: '50%', top: offset, transform: 'translateX(-50%)', width: size, height: size, background: bg, border, borderRadius: 3, cursor: 'ns-resize', zIndex: z }} onMouseDown={e => handleResizeMouseDown(e, 'n')} />
-        <div style={{ position: 'absolute', left: '50%', bottom: offset, transform: 'translateX(-50%)', width: size, height: size, background: bg, border, borderRadius: 3, cursor: 'ns-resize', zIndex: z }} onMouseDown={e => handleResizeMouseDown(e, 's')} />
-        <div style={{ position: 'absolute', top: '50%', left: offset, transform: 'translateY(-50%)', width: size, height: size, background: bg, border, borderRadius: 3, cursor: 'ew-resize', zIndex: z }} onMouseDown={e => handleResizeMouseDown(e, 'w')} />
-        <div style={{ position: 'absolute', top: '50%', right: offset, transform: 'translateY(-50%)', width: size, height: size, background: bg, border, borderRadius: 3, cursor: 'ew-resize', zIndex: z }} onMouseDown={e => handleResizeMouseDown(e, 'e')} />
-      </>
-    );
-  }
 
   function AutoResizingTextarea({ nodeHeight, ...props }: { nodeHeight: number } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
     const ref = useRef<HTMLTextAreaElement>(null);
@@ -328,7 +199,6 @@ export const FlowchartNode = ({
                 }}
               >×</button>
             )}
-            {renderResizeHandles()}
           </div>
         );
         return shapeDiv;
@@ -348,7 +218,6 @@ export const FlowchartNode = ({
             {showDelete && (
               <button style={{ position: 'absolute', top: 2, right: 2, width: 18, height: 18, background: 'white', border: '1px solid #f43f5e', color: '#f43f5e', fontWeight: 'bold', fontSize: 14, borderRadius: '50%', cursor: 'pointer', zIndex: 20 }} title="Delete node" onClick={e => { e.stopPropagation(); const event = new CustomEvent('deleteNode', { detail: { nodeId: node.id } }); window.dispatchEvent(event); }}>×</button>
             )}
-            {renderResizeHandles()}
           </div>
         );
       }
@@ -367,7 +236,6 @@ export const FlowchartNode = ({
             {showDelete && (
               <button style={{ position: 'absolute', top: 2, right: 2, width: 18, height: 18, background: 'white', border: '1px solid #f43f5e', color: '#f43f5e', fontWeight: 'bold', fontSize: 14, borderRadius: '50%', cursor: 'pointer', zIndex: 20 }} title="Delete node" onClick={e => { e.stopPropagation(); const event = new CustomEvent('deleteNode', { detail: { nodeId: node.id } }); window.dispatchEvent(event); }}>×</button>
             )}
-            {renderResizeHandles()}
           </div>
         );
       }
@@ -386,7 +254,6 @@ export const FlowchartNode = ({
             {showDelete && (
               <button style={{ position: 'absolute', top: 2, right: 2, width: 18, height: 18, background: 'white', border: '1px solid #f43f5e', color: '#f43f5e', fontWeight: 'bold', fontSize: 14, borderRadius: '50%', cursor: 'pointer', zIndex: 20 }} title="Delete node" onClick={e => { e.stopPropagation(); const event = new CustomEvent('deleteNode', { detail: { nodeId: node.id } }); window.dispatchEvent(event); }}>×</button>
             )}
-            {renderResizeHandles()}
           </div>
         );
       }
@@ -405,7 +272,6 @@ export const FlowchartNode = ({
             {showDelete && (
               <button style={{ position: 'absolute', top: 2, right: 2, width: 18, height: 18, background: 'white', border: '1px solid #f43f5e', color: '#f43f5e', fontWeight: 'bold', fontSize: 14, borderRadius: '50%', cursor: 'pointer', zIndex: 20 }} title="Delete node" onClick={e => { e.stopPropagation(); const event = new CustomEvent('deleteNode', { detail: { nodeId: node.id } }); window.dispatchEvent(event); }}>×</button>
             )}
-            {renderResizeHandles()}
           </div>
         );
       }
@@ -424,7 +290,6 @@ export const FlowchartNode = ({
             {showDelete && (
               <button style={{ position: 'absolute', top: 2, right: 2, width: 18, height: 18, background: 'white', border: '1px solid #f43f5e', color: '#f43f5e', fontWeight: 'bold', fontSize: 14, borderRadius: '50%', cursor: 'pointer', zIndex: 20 }} title="Delete node" onClick={e => { e.stopPropagation(); const event = new CustomEvent('deleteNode', { detail: { nodeId: node.id } }); window.dispatchEvent(event); }}>×</button>
             )}
-            {renderResizeHandles()}
           </div>
         );
       }
@@ -443,7 +308,6 @@ export const FlowchartNode = ({
             {showDelete && (
               <button style={{ position: 'absolute', top: 2, right: 2, width: 18, height: 18, background: 'white', border: '1px solid #f43f5e', color: '#f43f5e', fontWeight: 'bold', fontSize: 14, borderRadius: '50%', cursor: 'pointer', zIndex: 20 }} title="Delete node" onClick={e => { e.stopPropagation(); const event = new CustomEvent('deleteNode', { detail: { nodeId: node.id } }); window.dispatchEvent(event); }}>×</button>
             )}
-            {renderResizeHandles()}
           </div>
         );
       }
@@ -462,7 +326,6 @@ export const FlowchartNode = ({
             {showDelete && (
               <button style={{ position: 'absolute', top: 2, right: 2, width: 18, height: 18, background: 'white', border: '1px solid #f43f5e', color: '#f43f5e', fontWeight: 'bold', fontSize: 14, borderRadius: '50%', cursor: 'pointer', zIndex: 20 }} title="Delete node" onClick={e => { e.stopPropagation(); const event = new CustomEvent('deleteNode', { detail: { nodeId: node.id } }); window.dispatchEvent(event); }}>×</button>
             )}
-            {renderResizeHandles()}
           </div>
         );
       }
@@ -490,7 +353,6 @@ export const FlowchartNode = ({
             {showDelete && (
               <button style={{ position: 'absolute', top: 2, right: 2, width: 18, height: 18, background: 'white', border: '1px solid #f43f5e', color: '#f43f5e', fontWeight: 'bold', fontSize: 14, borderRadius: '50%', cursor: 'pointer', zIndex: 20 }} title="Delete node" onClick={e => { e.stopPropagation(); const event = new CustomEvent('deleteNode', { detail: { nodeId: node.id } }); window.dispatchEvent(event); }}>×</button>
             )}
-            {renderResizeHandles()}
           </div>
         );
       }
@@ -509,7 +371,6 @@ export const FlowchartNode = ({
             {showDelete && (
               <button style={{ position: 'absolute', top: 2, right: 2, width: 18, height: 18, background: 'white', border: '1px solid #f43f5e', color: '#f43f5e', fontWeight: 'bold', fontSize: 14, borderRadius: '50%', cursor: 'pointer', zIndex: 20 }} title="Delete node" onClick={e => { e.stopPropagation(); const event = new CustomEvent('deleteNode', { detail: { nodeId: node.id } }); window.dispatchEvent(event); }}>×</button>
             )}
-            {renderResizeHandles()}
           </div>
         );
       }
@@ -541,7 +402,6 @@ export const FlowchartNode = ({
             {showDelete && (
               <button style={{ position: 'absolute', top: 2, right: 2, width: 18, height: 18, background: 'white', border: '1px solid #f43f5e', color: '#f43f5e', fontWeight: 'bold', fontSize: 14, borderRadius: '50%', cursor: 'pointer', zIndex: 20 }} title="Delete node" onClick={e => { e.stopPropagation(); const event = new CustomEvent('deleteNode', { detail: { nodeId: node.id } }); window.dispatchEvent(event); }}>×</button>
             )}
-            {renderResizeHandles()}
           </div>
         );
       }
@@ -564,7 +424,6 @@ export const FlowchartNode = ({
             {showDelete && (
               <button style={{ position: 'absolute', top: 2, right: 2, width: 18, height: 18, background: 'white', border: '1px solid #f43f5e', color: '#f43f5e', fontWeight: 'bold', fontSize: 14, borderRadius: '50%', cursor: 'pointer', zIndex: 20 }} title="Delete node" onClick={e => { e.stopPropagation(); const event = new CustomEvent('deleteNode', { detail: { nodeId: node.id } }); window.dispatchEvent(event); }}>×</button>
             )}
-            {renderResizeHandles()}
           </div>
         );
       }
@@ -585,7 +444,6 @@ export const FlowchartNode = ({
             {showDelete && (
               <button style={{ position: 'absolute', top: 2, right: 2, width: 18, height: 18, background: 'white', border: '1px solid #f43f5e', color: '#f43f5e', fontWeight: 'bold', fontSize: 14, borderRadius: '50%', cursor: 'pointer', zIndex: 20 }} title="Delete node" onClick={e => { e.stopPropagation(); const event = new CustomEvent('deleteNode', { detail: { nodeId: node.id } }); window.dispatchEvent(event); }}>×</button>
             )}
-            {renderResizeHandles()}
           </div>
         );
       }
