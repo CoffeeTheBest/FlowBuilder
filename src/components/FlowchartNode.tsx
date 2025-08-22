@@ -1,22 +1,18 @@
-// React hooks for state and lifecycle
 import { useState, useRef, useLayoutEffect, useCallback } from 'react';
-// Import Node type definition
 import { Node } from '@/types/flowchart';
 
-// Props for the FlowchartNode component
 interface FlowchartNodeProps {
-  node: Node; // Node data
-  isSelected: boolean; // Is this node selected?
-  isConnecting: boolean; // Is this node being connected from?
-  panOffset: { x: number; y: number }; // Current pan offset of the canvas
-  onMouseDown: (e: React.MouseEvent) => void; // Handler for mouse down (for dragging)
-  onClick: () => void; // Handler for clicking the node
-  onTextChange: (text: string) => void; // Handler for changing node text
-  onMouseEnter?: () => void; // Handler for mouse enter (optional)
-  onMouseLeave?: () => void; // Handler for mouse leave (optional)
+  node: Node;
+  isSelected: boolean;
+  isConnecting: boolean;
+  panOffset: { x: number; y: number };
+  onMouseDown: (e: React.MouseEvent) => void;
+  onClick: () => void;
+  onTextChange: (text: string) => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }
 
-// FlowchartNode component renders a single node of any supported type
 export const FlowchartNode = ({
   node,
   isSelected,
@@ -28,18 +24,14 @@ export const FlowchartNode = ({
   onMouseEnter,
   onMouseLeave
 }: FlowchartNodeProps) => {
-  // State for the editable text value
   const [editValue, setEditValue] = useState(node.text);
-  // State for whether the node is in editing mode
   const [isEditing, setIsEditing] = useState(false);
 
-  // Handler for double-clicking the node (enables editing)
   const handleDoubleClick = () => {
     setEditValue(node.text);
     setIsEditing(true);
   };
 
-  // Handler for keydown in the textarea (Escape cancels editing)
   const handleTextAreaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Escape') {
       setIsEditing(false);
@@ -48,13 +40,12 @@ export const FlowchartNode = ({
     // Enter inserts a line break by default
   };
 
-  // Handler for blur on the textarea (saves text)
   const handleTextAreaBlur = () => {
     onTextChange(editValue);
     setIsEditing(false);
   };
 
-  // Auto-resizing textarea for editing node text
+
   function AutoResizingTextarea({ nodeHeight, ...props }: { nodeHeight: number } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
     const ref = useRef<HTMLTextAreaElement>(null);
     useLayoutEffect(() => {
@@ -80,15 +71,10 @@ export const FlowchartNode = ({
     );
   }
 
-  // Show delete button if node is selected
   const showDelete = isSelected;
-  // Base CSS classes for all node shapes
   const baseClasses = `absolute border-2 flex items-center justify-center text-sm font-medium cursor-pointer transition-colors text-center`;
-  // CSS classes for selected node
   const selectedClasses = isSelected ? 'ring-2 ring-primary ring-offset-2' : '';
-  // CSS classes for node being connected from
   const connectingClasses = isConnecting ? 'ring-2 ring-blue-500 ring-offset-2' : '';
-  // Style for node position, size, and color
   const style = {
     left: node.x + panOffset.x,
     top: node.y + panOffset.y,
@@ -99,7 +85,6 @@ export const FlowchartNode = ({
     zIndex: isSelected ? 10 : 2
   };
 
-  // Content to render inside the node (editable or static)
   const content = isEditing ? (
     <AutoResizingTextarea
       value={editValue}
@@ -144,22 +129,18 @@ export const FlowchartNode = ({
     >{node.text}</span>
   );
 
-  // Handler for mouse up (selects the node)
   const handleMouseUp = (e: React.MouseEvent) => {
     e.stopPropagation();
     onClick();
   };
 
-  // Render the correct shape for the node type
   function renderShape() {
     switch (node.type) {
-      // Rectangle, circle, diamond, and text nodes
       case 'rectangle':
       case 'circle':
       case 'diamond':
       case 'text': {
         const isDiamond = node.type === 'diamond';
-        // Main div for the shape
         const shapeDiv = (
           <div
             className={
@@ -187,14 +168,12 @@ export const FlowchartNode = ({
             onMouseLeave={onMouseLeave}
           >
             {isDiamond ? (
-              // Rotate content back for diamond
               <div style={{ transform: 'rotate(-45deg)', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {content}
               </div>
             ) : (
               content
             )}
-            {/* Delete button for node */}
             {showDelete && (
               <button
                 style={{
@@ -224,7 +203,6 @@ export const FlowchartNode = ({
         );
         return shapeDiv;
       }
-      // Pill node (rounded rectangle)
       case 'pill': {
         return (
           <div
@@ -243,7 +221,6 @@ export const FlowchartNode = ({
           </div>
         );
       }
-      // Parallelogram node
       case 'parallelogram': {
         return (
           <div
@@ -262,7 +239,6 @@ export const FlowchartNode = ({
           </div>
         );
       }
-      // Flipped parallelogram node
       case 'parallelogram-flip': {
         return (
           <div
@@ -281,7 +257,6 @@ export const FlowchartNode = ({
           </div>
         );
       }
-      // Trapezoid node
       case 'trapezoid': {
         return (
           <div
@@ -300,7 +275,6 @@ export const FlowchartNode = ({
           </div>
         );
       }
-      // Triangle node
       case 'triangle': {
         return (
           <div
@@ -319,7 +293,6 @@ export const FlowchartNode = ({
           </div>
         );
       }
-      // Hexagon node
       case 'hexagon': {
         return (
           <div
@@ -338,7 +311,6 @@ export const FlowchartNode = ({
           </div>
         );
       }
-      // Cylinder node
       case 'cylinder': {
         return (
           <div
@@ -357,7 +329,6 @@ export const FlowchartNode = ({
           </div>
         );
       }
-      // Actor node (stick figure SVG)
       case 'actor': {
         // Simple stick figure actor
         return (
@@ -385,7 +356,6 @@ export const FlowchartNode = ({
           </div>
         );
       }
-      // Annotation node (dashed border, yellow background)
       case 'annotation': {
         return (
           <div
@@ -404,7 +374,6 @@ export const FlowchartNode = ({
           </div>
         );
       }
-      // Line node (horizontal line)
       case 'line': {
         return (
           <div
@@ -417,7 +386,6 @@ export const FlowchartNode = ({
           />
         );
       }
-      // Bracket node (SVG path)
       case 'bracket': {
         return (
           <div
@@ -437,7 +405,6 @@ export const FlowchartNode = ({
           </div>
         );
       }
-      // Cloud node (SVG ellipses)
       case 'cloud': {
         return (
           <div
@@ -460,7 +427,6 @@ export const FlowchartNode = ({
           </div>
         );
       }
-      // Star node (SVG polygon)
       case 'star': {
         return (
           <div
@@ -481,12 +447,10 @@ export const FlowchartNode = ({
           </div>
         );
       }
-      // Default: unknown node type
       default:
         return null;
     }
   }
 
-  // Render the node shape
   return renderShape();
 }

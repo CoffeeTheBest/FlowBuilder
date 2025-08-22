@@ -1,26 +1,20 @@
-
-// React hooks for state and lifecycle
 import { useRef, useState, useCallback, useEffect } from 'react';
-// Import types for nodes, edges, and tools
 import type { Node, Edge, Tool } from '@/types/flowchart';
-// Import the FlowchartNode component for rendering nodes
 import { FlowchartNode } from './FlowchartNode';
 
-// Props for the Canvas component
 type CanvasProps = {
-  nodes: Node[]; // List of all nodes to render
-  edges: Edge[]; // List of all edges to render
-  activeTool: Tool; // Currently selected tool (select, connect, shape, etc.)
-  selectedNodeId: string | null; // Currently selected node ID
-  onNodeUpdate: (nodeId: string, updates: Partial<Node>, pushToHistory?: boolean) => void; // Callback for updating a node
-  onNodeSelect: (nodeId: string | null) => void; // Callback for selecting a node
-  onCanvasClick: (x: number, y: number) => void; // Callback for clicking on the canvas (to add a node)
-  onNodeClick: (nodeId: string) => void; // Callback for clicking a node
-  connectingFrom: string | null; // Node ID from which a connection is being made
-  zoomLevel: number; // Current zoom level of the canvas
+  nodes: Node[];
+  edges: Edge[];
+  activeTool: Tool;
+  selectedNodeId: string | null;
+  onNodeUpdate: (nodeId: string, updates: Partial<Node>, pushToHistory?: boolean) => void;
+  onNodeSelect: (nodeId: string | null) => void;
+  onCanvasClick: (x: number, y: number) => void;
+  onNodeClick: (nodeId: string) => void;
+  connectingFrom: string | null;
+  zoomLevel: number;
 };
 
-// Canvas component renders the flowchart area, nodes, and edges
 export const Canvas = ({
   nodes,
   edges,
@@ -33,14 +27,11 @@ export const Canvas = ({
   connectingFrom,
   zoomLevel
 }: CanvasProps) => {
-  // State for currently selected edge (for highlighting or editing)
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
-  // State for which edge label is being edited
+  // Listen for delete key to remove selected edge
+  // Track if label is being edited
   const [editingLabelEdgeId, setEditingLabelEdgeId] = useState<string | null>(null);
-  // State for the text of the edge label being edited
   const [editingLabelText, setEditingLabelText] = useState<string>('');
-
-  // Keyboard event handler for deleting edges and unselecting
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Prevent edge deletion if editing label
@@ -55,7 +46,6 @@ export const Canvas = ({
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedEdgeId) {
         // Remove edge from edges array
         const newEdges = edges.filter(edge => edge.id !== selectedEdgeId);
-        // Dispatch a custom event to notify parent about edge deletion
         const event = new CustomEvent('deleteEdge', { detail: { edgeId: selectedEdgeId, newEdges } });
         window.dispatchEvent(event);
         setSelectedEdgeId(null);
@@ -66,25 +56,16 @@ export const Canvas = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedEdgeId, edges, editingLabelEdgeId, onNodeSelect]);
-
-  // Ref for the canvas DOM element
   const canvasRef = useRef<HTMLDivElement>(null);
-  // State for panning (dragging the canvas background)
   const [isPanning, setIsPanning] = useState(false);
-  // State for the starting point of a pan
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
-  // State for the current pan offset
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
-  // State for the node currently being dragged
   const [draggedNode, setDraggedNode] = useState<{ nodeId: string; offset: { x: number; y: number } } | null>(null);
-  // State to track if a node has actually been dragged (for history)
   const [hasDragged, setHasDragged] = useState(false);
-  // State to track if the mouse is over an interactive element (node, edge, etc.)
   const [isOverInteractive, setIsOverInteractive] = useState(false);
 
-  // Mouse down handler for the canvas
-  // Handles adding shapes, starting panning, or unselecting nodes
   const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
+    
     // Allow shape adding if clicking on the canvas or the SVG overlay
     const isCanvasOrSvg =
       e.target === canvasRef.current ||
@@ -93,14 +74,13 @@ export const Canvas = ({
       e.preventDefault();
       if (e.button === 0) { // Left click
         if (activeTool !== 'select' && activeTool !== 'connect') {
-          // Add a new node at the clicked position
           const rect = canvasRef.current!.getBoundingClientRect();
           const x = (e.clientX - rect.left - panOffset.x) / zoomLevel;
           const y = (e.clientY - rect.top - panOffset.y) / zoomLevel;
           onCanvasClick(x, y);
         } else if (!isOverInteractive) {
-          // Unselect node and start panning if not over interactive elements
           onNodeSelect(null);
+          // Start panning if not over interactive elements
           setIsPanning(true);
           setPanStart({ x: e.clientX, y: e.clientY });
           document.body.style.cursor = 'grabbing';
@@ -110,11 +90,9 @@ export const Canvas = ({
   }, [activeTool, onCanvasClick, onNodeSelect, panOffset, isOverInteractive]);
 
 
-  // Mouse move handler for panning and node dragging
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isPanning) {
       if (e.buttons !== 1) return; // Only pan while mouse is down
-      // Calculate pan delta and update offset
       const deltaX = e.clientX - panStart.x;
       const deltaY = e.clientY - panStart.y;
       setPanOffset(prev => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
@@ -125,7 +103,6 @@ export const Canvas = ({
     if (draggedNode) {
       if (e.buttons !== 1) return; // Only drag while mouse is down
       setHasDragged(true);
-      // Calculate new node position based on mouse and update node
       const rect = canvasRef.current!.getBoundingClientRect();
       const x = (e.clientX - rect.left - draggedNode.offset.x - panOffset.x) / zoomLevel;
       const y = (e.clientY - rect.top - draggedNode.offset.y - panOffset.y) / zoomLevel;
@@ -133,7 +110,6 @@ export const Canvas = ({
     }
   }, [isPanning, panStart, draggedNode, onNodeUpdate, panOffset, zoomLevel]);
 
-  // Mouse up handler for ending drag or pan
   const handleCanvasMouseUp = useCallback(() => {
     if (draggedNode && hasDragged) {
       // Push to history only if node was actually dragged
@@ -142,15 +118,12 @@ export const Canvas = ({
     setDraggedNode(null);
     setHasDragged(false);
     setIsPanning(false);
-    // Restore cursor
     document.body.style.cursor = isOverInteractive ? 'pointer' : 'default';
   }, [draggedNode, hasDragged, onNodeUpdate, isOverInteractive]);
 
-  // Handler to start dragging a node
   const startNodeDrag = useCallback((nodeId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (activeTool === 'select' && e.button === 0) {
-      // Find the node and calculate drag offset
       const node = nodes.find(n => n.id === nodeId);
       if (node) {
         const rect = canvasRef.current!.getBoundingClientRect();
@@ -164,38 +137,36 @@ export const Canvas = ({
     }
   }, [activeTool, nodes, panOffset, zoomLevel]);
 
-  // Attach global mousemove and mouseup listeners for drag/pan
+  // Event listeners
   useEffect(() => {
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleCanvasMouseUp);
+
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleCanvasMouseUp);
     };
   }, [handleMouseMove, handleCanvasMouseUp]);
 
-  // Helper: get intersection point with node boundary for edge rendering
+  // Helper: get intersection point with node boundary
   function getBoundaryPoint(node, targetX, targetY) {
-    // Center of the node
     const cx = node.x + node.width / 2 + panOffset.x;
     const cy = node.y + node.height / 2 + panOffset.y;
-    // Vector from center to target
     const dx = targetX - cx;
     const dy = targetY - cy;
     if (node.type === 'circle') {
-      // For circles, use radius
       const r = node.width / 2;
       const len = Math.sqrt(dx * dx + dy * dy);
       if (len === 0) return { x: cx, y: cy };
       return { x: cx + (dx * r) / len, y: cy + (dy * r) / len };
     } else if (node.type === 'diamond') {
-      // For diamonds, approximate as ellipse
+      // Diamond: rotated square, approximate as ellipse for intersection
       const w = node.width / 2, h = node.height / 2;
       const len = Math.sqrt((dx * dx) / (w * w) + (dy * dy) / (h * h));
       if (len === 0) return { x: cx, y: cy };
       return { x: cx + dx / len, y: cy + dy / len };
     } else {
-      // For rectangles/text, clamp to edge
+      // Rectangle or text: clamp to edge
       const w = node.width / 2, h = node.height / 2;
       let tx = 0, ty = 0;
       if (Math.abs(dx / w) > Math.abs(dy / h)) {
@@ -211,38 +182,37 @@ export const Canvas = ({
     }
   }
 
-  // Helper: get the label for an edge (default empty string)
+  // Helper for edge label
   function getEdgeLabel(edge: Edge) {
     return edge.label || '';
   }
 
-  // Handler for clicking an edge (selects the edge)
+  // Helper for edge click
   function handleEdgeClick(e: React.MouseEvent, edgeId: string) {
     e.stopPropagation();
     setSelectedEdgeId(edgeId);
   }
 
-  // Handlers for mouse entering/leaving an edge (for cursor/interaction)
+  // Helper for edge hover
   function handleEdgeMouseEnter() {
     setIsOverInteractive(true);
   }
+
   function handleEdgeMouseLeave() {
     setIsOverInteractive(false);
   }
 
-  // Handler for changing an edge label (dispatches event to parent)
+  // Helper for edge label editing
   function handleEdgeLabelChange(edgeId: string, label: string) {
+    // Emit a custom event to parent to update edge label
     const event = new CustomEvent('editEdgeLabel', { detail: { edgeId, label } });
     window.dispatchEvent(event);
   }
 
-  // Renders a single edge (line + label + delete button)
   const renderEdge = (edge: Edge) => {
-    // Find the source and target nodes for the edge
     const fromNode = nodes.find(n => n.id === edge.fromNodeId);
     const toNode = nodes.find(n => n.id === edge.toNodeId);
     if (!fromNode || !toNode) return null;
-    // Calculate the center points of the nodes
     const fromCenter = {
       x: fromNode.x + fromNode.width / 2 + panOffset.x,
       y: fromNode.y + fromNode.height / 2 + panOffset.y
@@ -251,24 +221,21 @@ export const Canvas = ({
       x: toNode.x + toNode.width / 2 + panOffset.x,
       y: toNode.y + toNode.height / 2 + panOffset.y
     };
-    // Get the boundary points for the edge line
     const start = getBoundaryPoint(fromNode, toCenter.x, toCenter.y);
     const end = getBoundaryPoint(toNode, fromCenter.x, fromCenter.y);
 
-    // Calculate the midpoint for the label
+    // For label: find midpoint
     const mx = (start.x + end.x) / 2;
     const my = (start.y + end.y) / 2;
     const label = getEdgeLabel(edge);
-    let lineStart = start, lineEnd = end;
-    // Show label box if label exists or edge is selected
-    const showLabelBox = !!label || selectedEdgeId === edge.id;
-    // Is the label currently being edited?
-    const isEditingLabel = editingLabelEdgeId === edge.id;
+  let lineStart = start, lineEnd = end;
+  const showLabelBox = !!label || selectedEdgeId === edge.id;
+  const isEditingLabel = editingLabelEdgeId === edge.id;
+  // Always draw the line from node boundary to node boundary, even with a label
 
-    // Render SVG group for the edge
     return (
       <g key={edge.id}>
-        {/* Connector line between nodes */}
+        {/* Connector line */}
         <line
           x1={lineStart.x}
           y1={lineStart.y}
@@ -292,7 +259,6 @@ export const Canvas = ({
             style={{ pointerEvents: 'auto' }}
           >
             {isEditingLabel ? (
-              // Input for editing edge label
               <input
                 type="text"
                 value={editingLabelText}
@@ -330,7 +296,6 @@ export const Canvas = ({
                 onClick={e => e.stopPropagation()}
               />
             ) : (
-              // Display edge label and delete button
               <div
                 style={{
                   background: 'white',
@@ -389,13 +354,14 @@ export const Canvas = ({
     );
   };
 
-  // Render the main canvas
   return (
     <div
       ref={canvasRef}
       className={`absolute inset-0 overflow-hidden bg-background select-none${isPanning || draggedNode ? ' dragging' : ''}`}
       style={{
-        // Grid background using multiple linear gradients
+/* Prevent text selection while dragging or panning */
+// Add this style to your global CSS or inside a <style> tag if using CSS-in-JS
+// .dragging * { user-select: none !important; }
         backgroundImage: `
           linear-gradient(#e5e7eb 1px, transparent 1px),
           linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
@@ -409,7 +375,6 @@ export const Canvas = ({
           ${panOffset.x}px ${panOffset.y}px,
           ${panOffset.x}px ${panOffset.y}px
         `,
-        // Cursor style depends on state
         cursor: isPanning ? 'grabbing' : isOverInteractive ? 'pointer' : activeTool === 'select' ? 'grab' : 'crosshair',
         width: '100%',
         height: '100%',
@@ -419,6 +384,8 @@ export const Canvas = ({
       }}
       onMouseDown={handleCanvasMouseDown}
     >
+      {/* Grid pattern */}
+      
       {/* Zoomable content container */}
       <div
         style={{
@@ -428,7 +395,7 @@ export const Canvas = ({
           height: `${100 / zoomLevel}%`,
         }}
       >
-        {/* SVG for edges (lines and labels) */}
+        {/* SVG for edges */}
         <svg
           className="absolute left-0 top-0 pointer-events-auto"
           width="100%"
@@ -436,7 +403,6 @@ export const Canvas = ({
           style={{ zIndex: 1 }}
         >
           <defs>
-            {/* Arrowhead marker for edge lines */}
             <marker
               id="arrowhead"
               markerWidth="10"
@@ -454,7 +420,7 @@ export const Canvas = ({
           {edges.map(renderEdge)}
         </svg>
 
-        {/* Render all nodes */}
+        {/* Nodes */}
         {nodes.map((node) => (
           <FlowchartNode
             key={node.id}
@@ -471,7 +437,7 @@ export const Canvas = ({
         ))}
       </div>
 
-      {/* Empty state message if no nodes exist */}
+      {/* Empty state */}
       {nodes.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center text-muted-foreground">
