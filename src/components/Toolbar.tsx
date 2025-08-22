@@ -1,22 +1,29 @@
+// Import icons from lucide-react
 import { MousePointer, GitBranch, Undo, Redo, ZoomIn, ZoomOut } from 'lucide-react';
+// Import Button component
 import { Button } from './ui/button';
+// Import Tool type
 import { Tool } from '@/types/flowchart';
+// Import DropdownMenu for shape selection
 import * as DropdownMenu from './ui/dropdown-menu';
+// Import ReactNode for icon typing
 import { ReactNode } from 'react';
 
+// Props for the Toolbar component
 interface ToolbarProps {
-  activeTool: Tool;
-  onToolChange: (tool: Tool) => void;
-  onUndo: () => void;
-  onRedo: () => void;
-  canUndo: boolean;
-  canRedo: boolean;
-  zoomLevel: number;
-  onZoomIn: () => void;
-  onZoomOut: () => void;
-  onZoomReset: () => void;
+  activeTool: Tool; // Currently selected tool
+  onToolChange: (tool: Tool) => void; // Callback for changing tool
+  onUndo: () => void; // Undo action
+  onRedo: () => void; // Redo action
+  canUndo: boolean; // Is undo available?
+  canRedo: boolean; // Is redo available?
+  zoomLevel: number; // Current zoom level
+  onZoomIn: () => void; // Zoom in
+  onZoomOut: () => void; // Zoom out
+  onZoomReset: () => void; // Reset zoom
 }
 
+// Toolbar component renders the top bar with tool, shape, undo/redo, and zoom controls
 export const Toolbar = ({ 
   activeTool, 
   onToolChange, 
@@ -29,7 +36,7 @@ export const Toolbar = ({
   onZoomOut, 
   onZoomReset 
 }: ToolbarProps) => {
-  // List of shapes for dropdown
+  // List of available shapes for the shape dropdown
   const shapes: { id: Tool, label: string, icon: ReactNode }[] = [
     { id: 'rectangle', label: 'Rectangle', icon: <svg width="24" height="16"><rect x="2" y="2" width="20" height="12" rx="2" fill="#a5b4fc" stroke="#6366f1" strokeWidth="2"/></svg> },
     { id: 'pill', label: 'Pill', icon: <svg width="24" height="16"><rect x="2" y="2" width="20" height="12" rx="8" fill="#fbcfe8" stroke="#f43f5e" strokeWidth="2"/></svg> },
@@ -51,7 +58,9 @@ export const Toolbar = ({
 
   return (
     <div className="h-14 border-b bg-background flex items-center px-4 gap-2">
+      {/* Tool selection buttons */}
       <div className="flex items-center gap-1">
+        {/* Select tool */}
         <Button
           variant={activeTool === 'select' ? 'default' : 'ghost'}
           size="sm"
@@ -61,6 +70,7 @@ export const Toolbar = ({
         >
           <MousePointer className="h-4 w-4" />
         </Button>
+        {/* Shape dropdown menu */}
         <DropdownMenu.DropdownMenu>
           <DropdownMenu.DropdownMenuTrigger asChild>
             <Button
@@ -82,6 +92,7 @@ export const Toolbar = ({
             ))}
           </DropdownMenu.DropdownMenuContent>
         </DropdownMenu.DropdownMenu>
+        {/* Text tool */}
         <Button
           variant={activeTool === 'text' ? 'default' : 'ghost'}
           size="sm"
@@ -91,6 +102,7 @@ export const Toolbar = ({
         >
           <svg width="20" height="20" viewBox="0 0 20 20"><text x="3" y="16" fontSize="16" fontWeight="bold" fill="#64748b">T</text></svg>
         </Button>
+        {/* Connect tool */}
         <Button
           variant={activeTool === 'connect' ? 'default' : 'ghost'}
           size="sm"
@@ -101,6 +113,7 @@ export const Toolbar = ({
           <GitBranch className="h-4 w-4" />
         </Button>
       </div>
+      {/* Undo/redo controls */}
       <div className="ml-4 flex items-center gap-1">
         <Button
           variant="ghost"
@@ -121,7 +134,7 @@ export const Toolbar = ({
           <Redo className="h-4 w-4" />
         </Button>
       </div>
-      
+      {/* Zoom controls */}
       <div className="ml-4 flex items-center gap-1">
         <Button
           variant="ghost"
@@ -133,6 +146,7 @@ export const Toolbar = ({
         >
           <ZoomOut className="h-4 w-4" />
         </Button>
+        {/* Zoom reset button shows current zoom percent */}
         <button
           onClick={onZoomReset}
           className="h-8 min-w-[60px] px-2 text-sm font-medium bg-background border border-border rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
