@@ -431,15 +431,13 @@ export const FlowchartNode = ({
         return (
           <div
             className={`${baseClasses} ${selectedClasses} ${connectingClasses}`}
-            style={{ ...style, background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ ...style, clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)' }}
             onMouseDown={onMouseDown}
             onMouseUp={handleMouseUp}
+            onDoubleClick={handleDoubleClick}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
           >
-            <svg width={node.width} height={node.height} viewBox={`0 0 80 80`} style={{ display: 'block' }}>
-              <polygon points="40,5 48,30 75,30 52,47 60,72 40,57 20,72 28,47 5,30 32,30" fill={node.backgroundColor} stroke={node.borderColor} strokeWidth="2" />
-            </svg>
             {content}
             {showDelete && (
               <button style={{ position: 'absolute', top: 2, right: 2, width: 18, height: 18, background: 'white', border: '1px solid #f43f5e', color: '#f43f5e', fontWeight: 'bold', fontSize: 14, borderRadius: '50%', cursor: 'pointer', zIndex: 20 }} title="Delete node" onClick={e => { e.stopPropagation(); const event = new CustomEvent('deleteNode', { detail: { nodeId: node.id } }); window.dispatchEvent(event); }}>×</button>

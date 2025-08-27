@@ -154,32 +154,292 @@ export const Canvas = ({
     const cy = node.y + node.height / 2 + panOffset.y;
     const dx = targetX - cx;
     const dy = targetY - cy;
-    if (node.type === 'circle') {
-      const r = node.width / 2;
-      const len = Math.sqrt(dx * dx + dy * dy);
-      if (len === 0) return { x: cx, y: cy };
-      return { x: cx + (dx * r) / len, y: cy + (dy * r) / len };
-    } else if (node.type === 'diamond') {
-      // Diamond: rotated square, approximate as ellipse for intersection
-      const w = node.width / 2, h = node.height / 2;
-      const len = Math.sqrt((dx * dx) / (w * w) + (dy * dy) / (h * h));
-      if (len === 0) return { x: cx, y: cy };
-      return { x: cx + dx / len, y: cy + dy / len };
-    } else {
-      // Rectangle or text: clamp to edge
-      const w = node.width / 2, h = node.height / 2;
-      let tx = 0, ty = 0;
-      if (Math.abs(dx / w) > Math.abs(dy / h)) {
-        tx = dx > 0 ? w : -w;
-        ty = (dy / dx) * tx;
-        if (Math.abs(ty) > h) ty = dy > 0 ? h : -h, tx = (dx / dy) * ty;
-      } else {
-        ty = dy > 0 ? h : -h;
-        tx = (dx / dy) * ty;
-        if (Math.abs(tx) > w) tx = dx > 0 ? w : -w, ty = (dy / dx) * tx;
-      }
-      return { x: cx + tx, y: cy + ty };
+    
+    // Handle case where target is at center
+    if (Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001) {
+      return { x: cx, y: cy };
     }
+
+    switch (node.type) {
+      case 'circle':
+      case 'pill': {
+        const r = Math.min(node.width, node.height) / 2;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        return { x: cx + (dx * r) / len, y: cy + (dy * r) / len };
+      }
+
+      case 'diamond': {
+        // Diamond is a 45-degree rotated square
+        // Transform the direction vector by -45 degrees to work in diamond's local space
+        const cos45 = Math.cos(-Math.PI / 4);
+        const sin45 = Math.sin(-Math.PI / 4);
+        const localDx = dx * cos45 - dy * sin45;
+        const localDy = dx * sin45 + dy * cos45;
+        
+        // Find intersection with square in local space
+        const w = node.width / 2;
+        const h = node.height / 2;
+        let localTx, localTy;
+        
+        if (Math.abs(localDx / w) > Math.abs(localDy / h)) {
+          localTx = localDx > 0 ? w : -w;
+          localTy = (localDy / localDx) * localTx;
+        } else {
+          localTy = localDy > 0 ? h : -h;
+          localTx = (localDx / localDy) * localTy;
+        }
+        
+        // Transform back to world space by rotating 45 degrees
+        const cos45Back = Math.cos(Math.PI / 4);
+        const sin45Back = Math.sin(Math.PI / 4);
+        const worldTx = localTx * cos45Back - localTy * sin45Back;
+        const worldTy = localTx * sin45Back + localTy * cos45Back;
+        
+        return { x: cx + worldTx, y: cy + worldTy };
+      }
+
+      case 'triangle': {
+        // Triangle: polygon(50% 0%, 100% 100%, 0% 100%)
+        // Three vertices: top-center, bottom-right, bottom-left
+        const w = node.width / 2;
+        const h = node.height / 2;
+        const vertices = [
+          { x: 0, y: -h },      // Top center
+          { x: w, y: h },       // Bottom right
+          { x: -w, y: h }       // Bottom left
+        ];
+        return getPolygonBoundaryPoint(vertices, dx, dy, cx, cy);
+      }
+
+      case 'hexagon': {
+        // Hexagon: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)
+        const w = node.width / 2;
+        const h = node.height / 2;
+        const vertices = [
+          { x: -w * 0.5, y: -h },    // 25% 0%
+          { x: w * 0.5, y: -h },     // 75% 0%
+          { x: w, y: 0 },            // 100% 50%
+          { x: w * 0.5, y: h },      // 75% 100%
+          { x: -w * 0.5, y: h },     // 25% 100%
+          { x: -w, y: 0 }            // 0% 50%
+        ];
+        return getPolygonBoundaryPoint(vertices, dx, dy, cx, cy);
+      }
+
+      case 'trapezoid': {
+        // Trapezoid: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)
+        const w = node.width / 2;
+        const h = node.height / 2;
+        const vertices = [
+          { x: -w * 0.6, y: -h },    // 20% 0%
+          { x: w * 0.6, y: -h },     // 80% 0%
+          { x: w, y: h },            // 100% 100%
+          { x: -w, y: h }            // 0% 100%
+        ];
+        return getPolygonBoundaryPoint(vertices, dx, dy, cx, cy);
+      }
+
+      case 'star': {
+        // Star: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)
+        // Convert percentages to coordinates relative to center
+        const w = node.width / 2;
+        const h = node.height / 2;
+        const vertices = [
+          { x: 0, y: -h },                    // 50% 0% - top point
+          { x: w * 0.22, y: -h * 0.3 },       // 61% 35%
+          { x: w * 0.96, y: -h * 0.3 },       // 98% 35%
+          { x: w * 0.36, y: h * 0.14 },       // 68% 57%
+          { x: w * 0.58, y: h * 0.82 },       // 79% 91%
+          { x: 0, y: h * 0.4 },               // 50% 70%
+          { x: -w * 0.58, y: h * 0.82 },      // 21% 91%
+          { x: -w * 0.36, y: h * 0.14 },      // 32% 57%
+          { x: -w * 0.96, y: -h * 0.3 },      // 2% 35%
+          { x: -w * 0.22, y: -h * 0.3 }       // 39% 35%
+        ];
+        return getPolygonBoundaryPoint(vertices, dx, dy, cx, cy);
+      }
+
+      case 'parallelogram': {
+        // Parallelogram with skew(-20deg) - approximate as transformed rectangle
+        const w = node.width / 2;
+        const h = node.height / 2;
+        const skewAngle = -20 * Math.PI / 180; // -20 degrees in radians
+        
+        // Apply inverse skew to the direction vector
+        const skewedDx = dx - dy * Math.tan(skewAngle);
+        const skewedDy = dy;
+        
+        // Find intersection with rectangle
+        let tx, ty;
+        if (Math.abs(skewedDx / w) > Math.abs(skewedDy / h)) {
+          tx = skewedDx > 0 ? w : -w;
+          ty = (skewedDy / skewedDx) * tx;
+          if (Math.abs(ty) > h) {
+            ty = skewedDy > 0 ? h : -h;
+            tx = (skewedDx / skewedDy) * ty;
+          }
+        } else {
+          ty = skewedDy > 0 ? h : -h;
+          tx = (skewedDx / skewedDy) * ty;
+          if (Math.abs(tx) > w) {
+            tx = skewedDx > 0 ? w : -w;
+            ty = (skewedDy / skewedDx) * tx;
+          }
+        }
+        
+        // Apply skew back to get the actual boundary point
+        const finalTx = tx + ty * Math.tan(skewAngle);
+        return { x: cx + finalTx, y: cy + ty };
+      }
+
+      case 'parallelogram-flip': {
+        // Parallelogram with skew(20deg) - approximate as transformed rectangle
+        const w = node.width / 2;
+        const h = node.height / 2;
+        const skewAngle = 20 * Math.PI / 180; // 20 degrees in radians
+        
+        // Apply inverse skew to the direction vector
+        const skewedDx = dx - dy * Math.tan(skewAngle);
+        const skewedDy = dy;
+        
+        // Find intersection with rectangle
+        let tx, ty;
+        if (Math.abs(skewedDx / w) > Math.abs(skewedDy / h)) {
+          tx = skewedDx > 0 ? w : -w;
+          ty = (skewedDy / skewedDx) * tx;
+          if (Math.abs(ty) > h) {
+            ty = skewedDy > 0 ? h : -h;
+            tx = (skewedDx / skewedDy) * ty;
+          }
+        } else {
+          ty = skewedDy > 0 ? h : -h;
+          tx = (skewedDx / skewedDy) * ty;
+          if (Math.abs(tx) > w) {
+            tx = skewedDx > 0 ? w : -w;
+            ty = (skewedDy / skewedDx) * tx;
+          }
+        }
+        
+        // Apply skew back to get the actual boundary point
+        const finalTx = tx + ty * Math.tan(skewAngle);
+        return { x: cx + finalTx, y: cy + ty };
+      }
+
+      case 'cylinder': {
+        // Cylinder with borderRadius '50% / 20%' - approximate as ellipse
+        const rx = node.width / 2;
+        const ry = node.height / 2 * 0.8; // Slightly smaller due to curved ends
+        const len = Math.sqrt((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry));
+        return { x: cx + dx / len, y: cy + dy / len };
+      }
+
+      case 'cloud': {
+        // Cloud - approximate as circle
+        const r = Math.min(node.width, node.height) / 2 * 0.7;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        return { x: cx + (dx * r) / len, y: cy + (dy * r) / len };
+      }
+
+      case 'actor': {
+        // Actor (stick figure) - approximate as rectangle
+        const w = node.width / 2 * 0.8;
+        const h = node.height / 2;
+        let tx, ty;
+        if (Math.abs(dx / w) > Math.abs(dy / h)) {
+          tx = dx > 0 ? w : -w;
+          ty = (dy / dx) * tx;
+          if (Math.abs(ty) > h) {
+            ty = dy > 0 ? h : -h;
+            tx = (dx / dy) * ty;
+          }
+        } else {
+          ty = dy > 0 ? h : -h;
+          tx = (dx / dy) * ty;
+          if (Math.abs(tx) > w) {
+            tx = dx > 0 ? w : -w;
+            ty = (dy / dx) * tx;
+          }
+        }
+        return { x: cx + tx, y: cy + ty };
+      }
+
+      default:
+        // Rectangle, text, annotation, line, bracket and other rectangular shapes
+        const w = node.width / 2;
+        const h = node.height / 2;
+        let tx, ty;
+        if (Math.abs(dx / w) > Math.abs(dy / h)) {
+          tx = dx > 0 ? w : -w;
+          ty = (dy / dx) * tx;
+          if (Math.abs(ty) > h) {
+            ty = dy > 0 ? h : -h;
+            tx = (dx / dy) * ty;
+          }
+        } else {
+          ty = dy > 0 ? h : -h;
+          tx = (dx / dy) * ty;
+          if (Math.abs(tx) > w) {
+            tx = dx > 0 ? w : -w;
+            ty = (dy / dx) * tx;
+          }
+        }
+        return { x: cx + tx, y: cy + ty };
+    }
+  }
+
+  // Helper function for polygon boundary intersection
+  function getPolygonBoundaryPoint(vertices, dx, dy, cx, cy) {
+    // Normalize direction vector
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 0.001) return { x: cx, y: cy };
+    
+    const normDx = dx / len;
+    const normDy = dy / len;
+    
+    let closestIntersection = null;
+    let closestDistance = Infinity;
+    
+    // Check intersection with each edge of the polygon
+    for (let i = 0; i < vertices.length; i++) {
+      const v1 = vertices[i];
+      const v2 = vertices[(i + 1) % vertices.length];
+      
+      // Ray from origin (0,0) in direction (normDx, normDy): P = t * (normDx, normDy)
+      // Edge from v1 to v2: P = v1 + s * (v2 - v1)
+      // Solve: t * (normDx, normDy) = v1 + s * (v2 - v1)
+      // Rearranging: t * normDx - s * (v2.x - v1.x) = v1.x
+      //              t * normDy - s * (v2.y - v1.y) = v1.y
+      
+      const edgeDx = v2.x - v1.x;
+      const edgeDy = v2.y - v1.y;
+      
+      // Matrix form: [normDx, -edgeDx] [t] = [v1.x]
+      //              [normDy, -edgeDy] [s]   [v1.y]
+      const det = normDx * (-edgeDy) - normDy * (-edgeDx);
+      const det2 = normDx * edgeDy - normDy * edgeDx;
+      
+      if (Math.abs(det2) > 0.001) { // Not parallel
+        const t = (v1.x * edgeDy - v1.y * edgeDx) / det2;
+        const s = (v1.x * normDy - v1.y * normDx) / det2;
+        
+        // Check if intersection is on the edge (0 <= s <= 1) and in the right direction (t > 0)
+        if (s >= 0 && s <= 1 && t > 0.001 && t < closestDistance) {
+          closestDistance = t;
+          closestIntersection = {
+            x: t * normDx,
+            y: t * normDy
+          };
+        }
+      }
+    }
+    
+    if (closestIntersection) {
+      return { x: cx + closestIntersection.x, y: cy + closestIntersection.y };
+    }
+    
+    // Fallback to circle approximation if no intersection found
+    const r = Math.min(50, Math.min(Math.abs(dx), Math.abs(dy)) * 0.8);
+    return { x: cx + (dx * r) / len, y: cy + (dy * r) / len };
   }
 
   // Helper for edge label
